@@ -1,0 +1,5 @@
+- name: Debug secrets
+  run: |
+    echo "HOST is set: ${{ secrets.HOST != '' }}"
+    echo "USERNAME is set: ${{ secrets.USERNAME != '' }}"
+    echo "SSH_PRIVATE_KEY is set: ${{ secrets.SSH_PRIVATE_KEY != '' }}"
