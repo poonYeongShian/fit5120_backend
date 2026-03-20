@@ -1,0 +1,74 @@
+name: Deploy to EC2
+on:
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ap-southeast-5
+  CONTAINER_NAME: fit5120api
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet-version: [8.0.103]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{matrix.dotnet-version}}
+      - name: Build project
+        run: | 
+          dotnet build -c Release
+          echo "build successful"
+  push:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        
+      - name: Configure credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::483510444725:role/deloy-stack-Role-B4erjDdLXe06
+          aws-region: ${{env.AWS_REGION}}
+      - name: Login to ECR repo
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build, tag and push image to ecr
+        env:
+          REGISTRY: ${{steps.login-ecr.outputs.registry}}
+          REPOSITORY: meow/fit5120webapi
+          IMAGE_TAG: ${{github.sha}}
+        run: |-
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+      - name: Deploy to EC2
+        env:
+          REPOSITORY: meow/fit5120webapi
+          REGISTRY: ${{steps.login-ecr.outputs.registry}}
+          IMAGE_TAG: ${{github.sha}}
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.HOST }}
+          port: 22
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          username: ${{ secrets.USERNAME }}
+          envs: REGISTRY, REPOSITORY, IMAGE_TAG, AWS_REGION, CONTAINER_NAME
+          script: |-
+            aws ecr get-login-password --region $AWS_REGION | sudo docker login --username AWS --password-stdin $REGISTRY
+            sudo docker pull $REGISTRY/$REPOSITORY:$IMAGE_TAG
+            if sudo docker ps -a --format '{{.Names}}' | grep -w "$CONTAINER_NAME" > /dev/null; then
+                echo "Container '$CONTAINER_NAME' exists. Stopping..."
+                sudo docker stop "$CONTAINER_NAME"
+                sudo docker rm "$CONTAINER_NAME"
+            else
+                echo "Container does not exist. No action taken."
+            fi
+            sudo docker run -d --name $CONTAINER_NAME -p 8080:8080 -e ASPNETCORE_ENVIRONMENT=Development $REGISTRY/$REPOSITORY:$IMAGE_TAG
