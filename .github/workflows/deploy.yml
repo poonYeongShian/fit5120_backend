@@ -36,7 +36,7 @@ jobs:
       - name: Configure credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::483510444725:role/deloy-stack-Role-B4erjDdLXe06
+          role-to-assume: arn:aws:iam::270199846083:role/biowira-stack-Role-tV7THfDJMGor
           aws-region: ${{env.AWS_REGION}}
       - name: Login to ECR repo
         id: login-ecr
