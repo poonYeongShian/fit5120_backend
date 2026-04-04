@@ -63,13 +63,12 @@ public class AnimalRepository : IAnimalRepository
             new { Id = conservationStatusId });
     }
 
-    public async Task<IEnumerable<(Animal Animal, Category? Category, ConservationStatus? ConservationStatus)>> GetAllAnimalsWithDetailsAsync()
+    public async Task<IEnumerable<(Animal Animal, Category? Category, ConservationStatus? ConservationStatus)>> GetAllAnimalsWithDetailsAsync(string? category = null)
     {
         using var connection = new NpgsqlConnection(_connection.ConnectionString);
         await connection.OpenAsync();
 
-        var rows = await connection.QueryAsync<Animal, Category, ConservationStatus, (Animal, Category?, ConservationStatus?)>(
-            @"SELECT a.id                      AS Id,
+        var sql = @"SELECT a.id                      AS Id,
                      a.common_name             AS CommonName,
                      a.scientific_name         AS ScientificName,
                      a.category_id             AS CategoryId,
@@ -90,9 +89,17 @@ public class AnimalRepository : IAnimalRepository
                      cs.severity_order         AS SeverityOrder
               FROM animals a
               LEFT JOIN categories c             ON c.id = a.category_id
-              LEFT JOIN conservation_statuses cs ON cs.id = a.conservation_status_id
-              ORDER BY a.id",
-            (animal, category, conservationStatus) => (animal, category, conservationStatus),
+              LEFT JOIN conservation_statuses cs ON cs.id = a.conservation_status_id";
+
+        if (!string.IsNullOrWhiteSpace(category))
+            sql += "\n              WHERE LOWER(c.name) = LOWER(@Category)";
+
+        sql += "\n              ORDER BY a.id";
+
+        var rows = await connection.QueryAsync<Animal, Category, ConservationStatus, (Animal, Category?, ConservationStatus?)>(
+            sql,
+            (animal, cat, conservationStatus) => (animal, cat, conservationStatus),
+            new { Category = category },
             splitOn: "Id,Id");
 
         return rows;

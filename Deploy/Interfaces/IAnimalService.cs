@@ -4,7 +4,7 @@ namespace Deploy.Interfaces;
 
 public interface IAnimalService
 {
-    Task<IEnumerable<AnimalCardDto>> GetAllAnimalCardsAsync();
+    Task<IEnumerable<AnimalCardDto>> GetAllAnimalCardsAsync(string? category = null);
     Task<AnimalCardDetailDto?> GetAnimalCardDetailAsync(int animalId);
     Task<IEnumerable<AnimalOccurrenceDto>?> GetAnimalOccurrencesAsync(int animalId);
 }
