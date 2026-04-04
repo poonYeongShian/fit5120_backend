@@ -13,9 +13,9 @@ public class AnimalService : IAnimalService
         _repository = repository;
     }
 
-    public async Task<IEnumerable<AnimalCardDto>> GetAllAnimalCardsAsync()
+    public async Task<IEnumerable<AnimalCardDto>> GetAllAnimalCardsAsync(string? category = null)
     {
-        var items = await _repository.GetAllAnimalsWithDetailsAsync();
+        var items = await _repository.GetAllAnimalsWithDetailsAsync(category);
         return AnimalMapper.ToAnimalCardDtoList(items);
     }
 

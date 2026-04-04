@@ -7,6 +7,6 @@ public interface IAnimalRepository
     Task<Animal?> GetAnimalByIdAsync(int animalId);
     Task<Category?> GetCategoryByIdAsync(int categoryId);
     Task<ConservationStatus?> GetConservationStatusByIdAsync(int conservationStatusId);
-    Task<IEnumerable<(Animal Animal, Category? Category, ConservationStatus? ConservationStatus)>> GetAllAnimalsWithDetailsAsync();
+    Task<IEnumerable<(Animal Animal, Category? Category, ConservationStatus? ConservationStatus)>> GetAllAnimalsWithDetailsAsync(string? category = null);
     Task<IEnumerable<AnimalOccurrence>> GetOccurrencesByAnimalIdAsync(int animalId);
 }
