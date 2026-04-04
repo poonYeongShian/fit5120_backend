@@ -1,9 +1,22 @@
+using Npgsql;
+using Deploy.Interfaces;
+using Deploy.Repositories;
+using Deploy.Services;
+using Deploy.Endpoints;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Add PostgreSQL connection
+var connectionString = builder.Configuration.GetConnectionString("Postgres");
+builder.Services.AddScoped<NpgsqlConnection>(_ => new NpgsqlConnection(connectionString));
+
+// Register repositories and services
+builder.Services.AddScoped<IAnimalRepository, AnimalRepository>();
+builder.Services.AddScoped<IAnimalService, AnimalService>();
 
 var app = builder.Build();
 
@@ -16,29 +29,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapGet("/api/books", () =>
-{
-    return Results.Ok(Book.All);
-})
-.WithName("GetBooks")
-.WithOpenApi();
+// Map endpoints
+app.MapAnimalEndpoints();
 
-app.Run();
-
-public class Book
-{
-    public Book(int id, string name)
-    {
-        Id = id;
-        Name = name;
-    }
-
-    public int Id { get; set; }
-    public string Name { get; set; }
-
-    public static List<Book> All = [
-        new Book(1, "Things Fall Apart"),
-        new Book(2, "Lord Of The Rings"),
-        new Book(3, "Romeo and Juliet")
-        ];
-}
+await app.RunAsync();
