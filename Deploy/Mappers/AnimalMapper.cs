@@ -39,7 +39,8 @@ public static class AnimalMapper
             SeverityOrder = conservationStatus?.SeverityOrder ?? 0,
             Habitat = animal.Habitat,
             Diet = animal.Diet,
-            Lifespan = animal.Lifespan
+            Lifespan = animal.Lifespan,
+            Description = animal.Description
         };
     }
 

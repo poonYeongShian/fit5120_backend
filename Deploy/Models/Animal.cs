@@ -9,6 +9,7 @@ public class Animal
     public string? Habitat { get; set; }
     public string? Diet { get; set; }
     public string? Lifespan { get; set; }
+    public string? Description { get; set; }
     public int ConservationStatusId { get; set; }
     public string? ConservationReason { get; set; }
     public string? ImageUrl { get; set; }
