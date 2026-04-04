@@ -27,6 +27,7 @@ public class AnimalRepository : IAnimalRepository
                      habitat                 AS Habitat,
                      diet                    AS Diet,
                      lifespan                AS Lifespan,
+                     description             AS Description,
                      conservation_status_id  AS ConservationStatusId,
                      conservation_reason     AS ConservationReason,
                      image_url               AS ImageUrl,
