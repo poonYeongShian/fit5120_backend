@@ -9,6 +9,7 @@ public static class AnimalMapper
     {
         return new AnimalCardDto
         {
+            Id = animal.Id,
             CommonName = animal.CommonName,
             ScientificName = animal.ScientificName,
             Category = category?.Name ?? string.Empty,
