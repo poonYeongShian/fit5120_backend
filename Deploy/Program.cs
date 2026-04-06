@@ -17,6 +17,8 @@ builder.Services.AddScoped<NpgsqlConnection>(_ => new NpgsqlConnection(connectio
 // Register repositories and services
 builder.Services.AddScoped<IAnimalRepository, AnimalRepository>();
 builder.Services.AddScoped<IAnimalService, AnimalService>();
+builder.Services.AddScoped<IQuizRepository, QuizRepository>();
+builder.Services.AddScoped<IQuizService, QuizService>();
 
 var app = builder.Build();
 
@@ -31,5 +33,6 @@ app.UseHttpsRedirection();
 
 // Map endpoints
 app.MapAnimalEndpoints();
+app.MapQuizEndpoints();
 
 await app.RunAsync();
