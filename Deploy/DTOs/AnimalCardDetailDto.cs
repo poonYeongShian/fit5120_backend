@@ -10,6 +10,7 @@ public class AnimalCardDetailDto
     public string ConservationDescription { get; set; } = string.Empty;
     public string? ConservationReason { get; set; }
     public string? ImageUrl { get; set; }
+    public string? AvatarPath { get; set; }
     public short SeverityOrder { get; set; }
     public string? Habitat { get; set; }
     public string? Diet { get; set; }

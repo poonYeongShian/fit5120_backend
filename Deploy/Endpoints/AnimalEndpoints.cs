@@ -9,7 +9,8 @@ public static class AnimalEndpoints
 {
     public static void MapAnimalEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/api/animals");
+        var group = app.MapGroup("/api/animals")
+            .WithTags("Animals");
 
         group.MapGet("/", GetAllAnimals)
             .WithName("GetAnimalList")

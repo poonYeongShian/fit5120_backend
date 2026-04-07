@@ -15,7 +15,8 @@ public static class AnimalMapper
             Category = category?.Name ?? string.Empty,
             StatusCode = conservationStatus?.Code ?? string.Empty,
             StatusLabel = conservationStatus?.Label ?? string.Empty,
-            ImageUrl = animal.ImageUrl
+            ImageUrl = animal.ImageUrl,
+            AvatarPath = animal.AvatarPath
         };
     }
 
@@ -37,6 +38,7 @@ public static class AnimalMapper
             ConservationDescription = conservationStatus?.Description ?? string.Empty,
             ConservationReason = animal.ConservationReason,
             ImageUrl = animal.ImageUrl,
+            AvatarPath = animal.AvatarPath,
             SeverityOrder = conservationStatus?.SeverityOrder ?? 0,
             Habitat = animal.Habitat,
             Diet = animal.Diet,

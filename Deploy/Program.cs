@@ -19,6 +19,10 @@ builder.Services.AddScoped<IAnimalRepository, AnimalRepository>();
 builder.Services.AddScoped<IAnimalService, AnimalService>();
 builder.Services.AddScoped<IQuizRepository, QuizRepository>();
 builder.Services.AddScoped<IQuizService, QuizService>();
+builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<IFunFactRepository, FunFactRepository>();
+builder.Services.AddScoped<IFunFactService, FunFactService>();
 
 var app = builder.Build();
 
@@ -34,5 +38,7 @@ app.UseHttpsRedirection();
 // Map endpoints
 app.MapAnimalEndpoints();
 app.MapQuizEndpoints();
+app.MapProfileEndpoints();
+app.MapFunFactEndpoints();
 
 await app.RunAsync();

@@ -8,7 +8,8 @@ public static class QuizEndpoints
 {
     public static void MapQuizEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/api/quizzes");
+        var group = app.MapGroup("/api/quizzes")
+            .WithTags("Quizzes");
 
         group.MapGet("/", GetAllQuizzes)
             .WithName("GetAllQuizzes")
