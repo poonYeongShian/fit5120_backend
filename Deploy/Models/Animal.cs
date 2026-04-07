@@ -13,6 +13,7 @@ public class Animal
     public int ConservationStatusId { get; set; }
     public string? ConservationReason { get; set; }
     public string? ImageUrl { get; set; }
+    public string? AvatarPath { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

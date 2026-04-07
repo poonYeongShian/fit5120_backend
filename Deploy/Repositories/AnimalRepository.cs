@@ -31,6 +31,7 @@ public class AnimalRepository : IAnimalRepository
                      conservation_status_id  AS ConservationStatusId,
                      conservation_reason     AS ConservationReason,
                      image_url               AS ImageUrl,
+                     avatar_path             AS AvatarPath,
                      created_at              AS CreatedAt,
                      updated_at              AS UpdatedAt
               FROM animals WHERE id = @Id",
@@ -79,6 +80,7 @@ public class AnimalRepository : IAnimalRepository
                      a.conservation_status_id  AS ConservationStatusId,
                      a.conservation_reason     AS ConservationReason,
                      a.image_url               AS ImageUrl,
+                     a.avatar_path             AS AvatarPath,
                      a.created_at              AS CreatedAt,
                      a.updated_at              AS UpdatedAt,
                      c.id                      AS Id,

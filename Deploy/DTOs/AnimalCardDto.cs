@@ -9,4 +9,5 @@ public class AnimalCardDto
     public string StatusCode { get; set; } = string.Empty;
     public string StatusLabel { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
+    public string? AvatarPath { get; set; }
 }
