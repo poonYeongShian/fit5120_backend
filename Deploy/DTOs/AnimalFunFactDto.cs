@@ -14,6 +14,5 @@ public class AnimalFunFactDto
     public int UserLevel { get; set; }
     public int UserPoints { get; set; }
     public string UserLevelName { get; set; } = string.Empty;
-    public string? BadgeEmoji { get; set; }
     public bool AlreadyUnlocked { get; set; }
 }

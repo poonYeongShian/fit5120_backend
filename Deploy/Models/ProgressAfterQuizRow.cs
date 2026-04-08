@@ -9,5 +9,4 @@ public class ProgressAfterQuizRow
     public int CurrentLevel { get; set; }
     public int TotalPoints { get; set; }
     public string LevelName { get; set; } = string.Empty;
-    public string? BadgeEmoji { get; set; }
 }

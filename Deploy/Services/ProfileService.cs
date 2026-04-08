@@ -61,8 +61,7 @@ public class ProfileService : IProfileService
             TotalPoints  = row.TotalPoints,
             TotalQuizzes = row.TotalQuizzes,
             StreakDays   = row.StreakDays,
-            LevelName    = row.LevelName,
-            BadgeEmoji   = row.BadgeEmoji
+            LevelName    = row.LevelName
         };
     }
 
@@ -94,7 +93,6 @@ public class ProfileService : IProfileService
             TotalPoints  = row.TotalPoints,
             StreakDays   = row.StreakDays,
             LevelName    = row.LevelName,
-            BadgeEmoji   = row.BadgeEmoji,
             SessionToken = sessionToken
         };
     }
@@ -134,7 +132,6 @@ public class ProfileService : IProfileService
             TotalPoints      = progress.TotalPoints,
             CurrentLevel     = progress.CurrentLevel,
             LevelName        = progress.LevelName,
-            BadgeEmoji       = progress.BadgeEmoji,
             LeveledUp        = progress.CurrentLevel > levelBefore.Value,
             LevelBefore      = levelBefore.Value,
             LevelAfter       = progress.CurrentLevel,
