@@ -54,6 +54,7 @@ public class ProfileRepository : IProfileRepository
                   total_points   AS TotalPoints,
                   total_quizzes  AS TotalQuizzes,
                   total_correct  AS TotalCorrect,
+                  total_missions AS TotalMissions,
                   streak_days    AS StreakDays,
                   last_active_at AS LastActiveAt,
                   updated_at     AS UpdatedAt",
@@ -89,19 +90,18 @@ public class ProfileRepository : IProfileRepository
 
         return await connection.QueryFirstOrDefaultAsync<ProfileAutoLoginRow>(
             @"SELECT
-                  p.id            AS ProfileId,
-                  p.display_name  AS DisplayName,
-                  p.animal_id     AS AnimalId,
-                  p.profile_code  AS ProfileCode,
-                  pp.current_level AS CurrentLevel,
-                  pp.total_points  AS TotalPoints,
-                  pp.total_quizzes AS TotalQuizzes,
-                  pp.streak_days   AS StreakDays,
-                  l.level_name     AS LevelName
+                  p.id              AS ProfileId,
+                  p.display_name    AS DisplayName,
+                  p.animal_id       AS AnimalId,
+                  p.profile_code    AS ProfileCode,
+                  pp.current_level  AS CurrentLevel,
+                  pp.total_points   AS TotalPoints,
+                  pp.total_quizzes  AS TotalQuizzes,
+                  pp.total_missions AS TotalMissions,
+                  pp.streak_days    AS StreakDays
               FROM public.profile_sessions ps
-              JOIN public.profiles         p  ON p.id           = ps.profile_id
-              JOIN public.profile_progress pp ON pp.profile_id  = p.id
-              JOIN public.levels           l  ON l.level_number = pp.current_level
+              JOIN public.profiles         p  ON p.id          = ps.profile_id
+              JOIN public.profile_progress pp ON pp.profile_id = p.id
               WHERE ps.session_token = @SessionToken
                 AND ps.is_active     = TRUE
                 AND (ps.expires_at IS NULL OR ps.expires_at > now())",
@@ -149,18 +149,14 @@ public class ProfileRepository : IProfileRepository
                   p.profile_code   AS ProfileCode,
                   pp.current_level AS CurrentLevel,
                   pp.total_points  AS TotalPoints,
-                  pp.streak_days   AS StreakDays,
-                  l.level_name     AS LevelName
+                  pp.streak_days   AS StreakDays
               FROM public.profiles         p
-              JOIN public.profile_progress pp ON pp.profile_id  = p.id
-              JOIN public.levels           l  ON l.level_number = pp.current_level
+              JOIN public.profile_progress pp ON pp.profile_id = p.id
               WHERE p.profile_code = @ProfileCode
                 AND p.pin          = @Pin
                 AND p.is_active    = TRUE",
             new { ProfileCode = profileCode, Pin = pin });
     }
-
-    // ?? Save Progress ???????????????????????????????????????????????????????????
 
     public async Task<int?> GetCurrentLevelAsync(Guid profileId)
     {
@@ -171,138 +167,6 @@ public class ProfileRepository : IProfileRepository
             @"SELECT current_level
               FROM   public.profile_progress
               WHERE  profile_id = @ProfileId",
-            new { ProfileId = profileId });
-    }
-
-    public async Task<int> InsertQuizHistoryAsync(
-        Guid profileId,
-        int score, int totalQuestions, int correctAnswers,
-        int pointsEarned, int levelBefore)
-    {
-        using var connection = new NpgsqlConnection(_connection.ConnectionString);
-        await connection.OpenAsync();
-
-        return await connection.QuerySingleAsync<int>(
-            @"INSERT INTO public.profile_history
-                  (profile_id,
-                   score, total_questions, correct_answers,
-                   points_earned, level_before)
-              VALUES
-                  (@ProfileId,
-                   @Score, @TotalQuestions, @CorrectAnswers,
-                   @PointsEarned, @LevelBefore)
-              RETURNING id",
-            new
-            {
-                ProfileId      = profileId,
-                Score          = score,
-                TotalQuestions = totalQuestions,
-                CorrectAnswers = correctAnswers,
-                PointsEarned   = pointsEarned,
-                LevelBefore    = levelBefore
-            });
-    }
-
-    public async Task AddPointsAsync(Guid profileId, int pointsEarned, int correctAnswers)
-    {
-        using var connection = new NpgsqlConnection(_connection.ConnectionString);
-        await connection.OpenAsync();
-
-        await connection.ExecuteAsync(
-            @"UPDATE public.profile_progress
-              SET
-                  total_points   = total_points  + @PointsEarned,
-                  total_quizzes  = total_quizzes + 1,
-                  total_correct  = total_correct + @CorrectAnswers,
-                  last_active_at = now(),
-                  updated_at     = now()
-              WHERE profile_id = @ProfileId",
-            new { ProfileId = profileId, PointsEarned = pointsEarned, CorrectAnswers = correctAnswers });
-    }
-
-    public async Task<ProgressAfterQuizRow> ApplyLevelUpAsync(Guid profileId)
-    {
-        using var connection = new NpgsqlConnection(_connection.ConnectionString);
-        await connection.OpenAsync();
-
-        // Step 1: Resolve and apply the highest level the profile has earned.
-        await connection.ExecuteAsync(
-            @"UPDATE public.profile_progress
-              SET
-                  current_level = (
-                      SELECT MAX(l.level_number)
-                      FROM   public.levels l
-                      WHERE  l.points_required <= (
-                          SELECT total_points
-                          FROM   public.profile_progress
-                          WHERE  profile_id = @ProfileId
-                      )
-                  ),
-                  updated_at = now()
-              WHERE profile_id = @ProfileId",
-            new { ProfileId = profileId });
-
-        // Step 2: Read back the resolved level together with its display metadata.
-        return await connection.QuerySingleAsync<ProgressAfterQuizRow>(
-            @"SELECT
-                  pp.current_level AS CurrentLevel,
-                  pp.total_points  AS TotalPoints,
-                  l.level_name     AS LevelName
-              FROM public.profile_progress pp
-              JOIN public.levels           l  ON l.level_number = pp.current_level
-              WHERE pp.profile_id = @ProfileId",
-            new { ProfileId = profileId });
-    }
-
-    public async Task<int> UnlockNewFactsAsync(Guid profileId)
-    {
-        using var connection = new NpgsqlConnection(_connection.ConnectionString);
-        await connection.OpenAsync();
-
-        // Inserts one row per fact whose unlock_level <= the profile's current level.
-        // ON CONFLICT DO NOTHING skips facts already unlocked.
-        // Returns the count of newly inserted rows.
-        return await connection.ExecuteAsync(
-            @"INSERT INTO public.profile_unlocked_facts (profile_id, fact_id)
-              SELECT @ProfileId, f.id
-              FROM   public.animal_fun_facts f
-              WHERE  f.unlock_level <= (
-                  SELECT current_level
-                  FROM   public.profile_progress
-                  WHERE  profile_id = @ProfileId
-              )
-              ON CONFLICT (profile_id, fact_id) DO NOTHING",
-            new { ProfileId = profileId });
-    }
-
-    public async Task FinaliseHistoryAsync(Guid profileId)
-    {
-        using var connection = new NpgsqlConnection(_connection.ConnectionString);
-        await connection.OpenAsync();
-
-        // Stamps level_after and leveled_up on the most-recent history row for this profile.
-        await connection.ExecuteAsync(
-            @"UPDATE public.profile_history
-              SET
-                  level_after = (
-                      SELECT current_level
-                      FROM   public.profile_progress
-                      WHERE  profile_id = @ProfileId
-                  ),
-                  leveled_up = (
-                      level_before < (
-                          SELECT current_level
-                          FROM   public.profile_progress
-                          WHERE  profile_id = @ProfileId
-                      )
-                  )
-              WHERE id = (
-                  SELECT id
-                  FROM   public.profile_history
-                  WHERE  profile_id = @ProfileId
-                  ORDER  BY completed_at DESC
-                  LIMIT  1
-              )",
             new { ProfileId = profileId });
     }
 }

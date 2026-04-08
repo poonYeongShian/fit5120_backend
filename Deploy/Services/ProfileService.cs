@@ -60,8 +60,8 @@ public class ProfileService : IProfileService
             CurrentLevel = row.CurrentLevel,
             TotalPoints  = row.TotalPoints,
             TotalQuizzes = row.TotalQuizzes,
-            StreakDays   = row.StreakDays,
-            LevelName    = row.LevelName
+            TotalMissions = row.TotalMissions,
+            StreakDays   = row.StreakDays
         };
     }
 
@@ -92,50 +92,7 @@ public class ProfileService : IProfileService
             CurrentLevel = row.CurrentLevel,
             TotalPoints  = row.TotalPoints,
             StreakDays   = row.StreakDays,
-            LevelName    = row.LevelName,
             SessionToken = sessionToken
-        };
-    }
-
-    public async Task<SaveProgressResponseDto?> SaveProgressAsync(SaveProgressRequestDto request)
-    {
-        // Capture current level before any changes so we can detect a level-up later
-        var levelBefore = await _repository.GetCurrentLevelAsync(request.ProfileId);
-
-        if (levelBefore is null)
-            return null; // profile does not exist
-
-        // Step 1: Record the quiz attempt in history
-        var historyId = await _repository.InsertQuizHistoryAsync(
-            request.ProfileId,
-            request.Score,
-            request.TotalQuestions,
-            request.CorrectAnswers,
-            request.PointsEarned,
-            levelBefore.Value);
-
-        // Step 2: Add points, increment counters
-        await _repository.AddPointsAsync(request.ProfileId, request.PointsEarned, request.CorrectAnswers);
-
-        // Step 3: Resolve and apply the new level
-        var progress = await _repository.ApplyLevelUpAsync(request.ProfileId);
-
-        // Step 4: Unlock any fun facts the profile has now earned
-        var newFactsUnlocked = await _repository.UnlockNewFactsAsync(request.ProfileId);
-
-        // Step 5: Stamp level_after + leveled_up on the history row
-        await _repository.FinaliseHistoryAsync(request.ProfileId);
-
-        return new SaveProgressResponseDto
-        {
-            HistoryId        = historyId,
-            TotalPoints      = progress.TotalPoints,
-            CurrentLevel     = progress.CurrentLevel,
-            LevelName        = progress.LevelName,
-            LeveledUp        = progress.CurrentLevel > levelBefore.Value,
-            LevelBefore      = levelBefore.Value,
-            LevelAfter       = progress.CurrentLevel,
-            NewFactsUnlocked = newFactsUnlocked
         };
     }
 }

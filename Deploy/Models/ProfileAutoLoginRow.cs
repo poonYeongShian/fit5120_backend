@@ -13,6 +13,6 @@ public class ProfileAutoLoginRow
     public int CurrentLevel { get; set; }
     public int TotalPoints { get; set; }
     public int TotalQuizzes { get; set; }
+    public int TotalMissions { get; set; }
     public int StreakDays { get; set; }
-    public string LevelName { get; set; } = string.Empty;
 }

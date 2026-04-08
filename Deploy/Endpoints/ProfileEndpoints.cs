@@ -97,39 +97,6 @@ public static class ProfileEndpoints
                     "profile_code / PIN combination not found or profile inactive.";
                 return operation;
             });
-
-        group.MapPost("/progress", SaveProgress)
-            .WithName("SaveProgress")
-            .WithDescription(
-                "Saves a completed quiz attempt for a profile. " +
-                "Supply the session token via the X-Session-Token header. " +
-                "Adds points, checks for a level-up, unlocks new fun facts, " +
-                "and stamps the history row with the final level.")
-            .Produces<SaveProgressResponseDto>(StatusCodes.Status200OK)
-            .Produces<ErrorResponseDto>(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized)
-            .Produces<ErrorResponseDto>(StatusCodes.Status404NotFound)
-            .WithOpenApi(operation =>
-            {
-                operation.Parameters.Add(new OpenApiParameter
-                {
-                    Name = "X-Session-Token",
-                    In = ParameterLocation.Header,
-                    Required = true,
-                    Description = "Session token issued during profile creation or restore.",
-                    Schema = new OpenApiSchema { Type = "string" }
-                });
-
-                operation.Responses["200"].Description =
-                    "Progress saved. Returns updated points, level info, level-up flag and newly unlocked fact count.";
-                operation.Responses["400"].Description =
-                    "Missing or invalid fields. Error code: INVALID_REQUEST.";
-                operation.Responses["401"].Description =
-                    "Session token missing, invalid, expired or does not belong to this profile.";
-                operation.Responses["404"].Description =
-                    "Profile not found. Error code: PROFILE_NOT_FOUND.";
-                return operation;
-            });
     }
 
     private static async Task<Results<Created<CreateProfileResponseDto>, BadRequest<ErrorResponseDto>>> CreateProfile(
@@ -209,41 +176,6 @@ public static class ProfileEndpoints
 
         if (result is null)
             return TypedResults.Unauthorized();
-
-        return TypedResults.Ok(result);
-    }
-
-    private static async Task<Results<Ok<SaveProgressResponseDto>, BadRequest<ErrorResponseDto>, NotFound<ErrorResponseDto>, UnauthorizedHttpResult>> SaveProgress(
-        SaveProgressRequestDto request,
-        HttpContext httpContext,
-        IProfileService service)
-    {
-        var sessionToken = httpContext.Request.Headers["X-Session-Token"].FirstOrDefault();
-
-        if (string.IsNullOrWhiteSpace(sessionToken))
-            return TypedResults.Unauthorized();
-
-        var session = await service.AutoLoginAsync(sessionToken);
-
-        if (session is null || session.ProfileId != request.ProfileId)
-            return TypedResults.Unauthorized();
-
-        if (request.TotalQuestions <= 0)
-        {
-            return TypedResults.BadRequest(new ErrorResponseDto
-            {
-                ErrorCode = "INVALID_REQUEST",
-                Details = new Dictionary<string, object?>
-                {
-                    ["message"] = "TotalQuestions is required and must be valid."
-                }
-            });
-        }
-
-        var result = await service.SaveProgressAsync(request);
-
-        if (result is null)
-            return TypedResults.NotFound(new ErrorResponseDto { ErrorCode = "PROFILE_NOT_FOUND" });
 
         return TypedResults.Ok(result);
     }
