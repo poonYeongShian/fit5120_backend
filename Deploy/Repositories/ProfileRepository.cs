@@ -97,8 +97,7 @@ public class ProfileRepository : IProfileRepository
                   pp.total_points  AS TotalPoints,
                   pp.total_quizzes AS TotalQuizzes,
                   pp.streak_days   AS StreakDays,
-                  l.level_name     AS LevelName,
-                  l.badge_emoji    AS BadgeEmoji
+                  l.level_name     AS LevelName
               FROM public.profile_sessions ps
               JOIN public.profiles         p  ON p.id           = ps.profile_id
               JOIN public.profile_progress pp ON pp.profile_id  = p.id
@@ -151,8 +150,7 @@ public class ProfileRepository : IProfileRepository
                   pp.current_level AS CurrentLevel,
                   pp.total_points  AS TotalPoints,
                   pp.streak_days   AS StreakDays,
-                  l.level_name     AS LevelName,
-                  l.badge_emoji    AS BadgeEmoji
+                  l.level_name     AS LevelName
               FROM public.profiles         p
               JOIN public.profile_progress pp ON pp.profile_id  = p.id
               JOIN public.levels           l  ON l.level_number = pp.current_level
@@ -249,8 +247,7 @@ public class ProfileRepository : IProfileRepository
             @"SELECT
                   pp.current_level AS CurrentLevel,
                   pp.total_points  AS TotalPoints,
-                  l.level_name     AS LevelName,
-                  l.badge_emoji    AS BadgeEmoji
+                  l.level_name     AS LevelName
               FROM public.profile_progress pp
               JOIN public.levels           l  ON l.level_number = pp.current_level
               WHERE pp.profile_id = @ProfileId",

@@ -10,6 +10,5 @@ public class RestoreProfileResponseDto
     public int TotalPoints { get; set; }
     public int StreakDays { get; set; }
     public string LevelName { get; set; } = string.Empty;
-    public string? BadgeEmoji { get; set; }
     public string SessionToken { get; set; } = string.Empty;
 }

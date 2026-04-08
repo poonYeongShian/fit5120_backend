@@ -41,7 +41,6 @@ public class FunFactRepository : IFunFactRepository
                 pp.current_level                                        AS UserLevel,
                 pp.total_points                                         AS UserPoints,
                 l.level_name                                            AS UserLevelName,
-                l.badge_emoji                                           AS BadgeEmoji,
 
                 CASE
                     WHEN puf.id IS NOT NULL THEN TRUE

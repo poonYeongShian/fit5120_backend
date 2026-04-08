@@ -11,5 +11,4 @@ public class ProfileAutoLoginDto
     public int TotalQuizzes { get; set; }
     public int StreakDays { get; set; }
     public string LevelName { get; set; } = string.Empty;
-    public string? BadgeEmoji { get; set; }
 }
