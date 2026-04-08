@@ -8,5 +8,4 @@ public interface IProfileService
     Task<ProfileAutoLoginDto?> AutoLoginAsync(string sessionToken);
     Task<bool> LogoutAsync(string sessionToken);
     Task<RestoreProfileResponseDto?> RestoreProfileAsync(RestoreProfileRequestDto request);
-    Task<SaveProgressResponseDto?> SaveProgressAsync(SaveProgressRequestDto request);
 }

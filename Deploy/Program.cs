@@ -23,6 +23,8 @@ builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IFunFactRepository, FunFactRepository>();
 builder.Services.AddScoped<IFunFactService, FunFactService>();
+builder.Services.AddScoped<IMissionRepository, MissionRepository>();
+builder.Services.AddScoped<IMissionService, MissionService>();
 
 var app = builder.Build();
 
@@ -40,5 +42,6 @@ app.MapAnimalEndpoints();
 app.MapQuizEndpoints();
 app.MapProfileEndpoints();
 app.MapFunFactEndpoints();
+app.MapMissionEndpoints();
 
 await app.RunAsync();

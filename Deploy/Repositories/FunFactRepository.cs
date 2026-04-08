@@ -40,7 +40,6 @@ public class FunFactRepository : IFunFactRepository
 
                 pp.current_level                                        AS UserLevel,
                 pp.total_points                                         AS UserPoints,
-                l.level_name                                            AS UserLevelName,
 
                 CASE
                     WHEN puf.id IS NOT NULL THEN TRUE
@@ -51,9 +50,6 @@ public class FunFactRepository : IFunFactRepository
 
             JOIN public.profile_progress pp
                 ON pp.profile_id = @ProfileId
-
-            JOIN public.levels l
-                ON l.level_number = pp.current_level
 
             LEFT JOIN public.profile_unlocked_facts puf
                 ON puf.profile_id = pp.profile_id

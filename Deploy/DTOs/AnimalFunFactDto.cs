@@ -13,6 +13,5 @@ public class AnimalFunFactDto
     public int LevelsNeeded { get; set; }
     public int UserLevel { get; set; }
     public int UserPoints { get; set; }
-    public string UserLevelName { get; set; } = string.Empty;
     public bool AlreadyUnlocked { get; set; }
 }

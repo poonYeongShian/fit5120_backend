@@ -8,6 +8,7 @@ public class ProfileProgress
     public int TotalPoints { get; set; } = 0;
     public int TotalQuizzes { get; set; } = 0;
     public int TotalCorrect { get; set; } = 0;
+    public int TotalMissions { get; set; } = 0;
     public int StreakDays { get; set; } = 0;
     public DateTimeOffset? LastActiveAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
