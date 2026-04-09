@@ -38,13 +38,13 @@ public static class MissionEndpoints
                     weatherCodeParam.Description =
                         "WMO weather code from the weather API. Supported ranges: " +
                         "0 = Clear Sky, " +
-                        "1�3 = Mainly Clear, " +
-                        "45�48 = Foggy, " +
-                        "51�55 = Drizzle, " +
-                        "61�65 = Rain, " +
-                        "71�77 = Snowfall, " +
-                        "80�82 = Rain Showers, " +
-                        "95�99 = Thunderstorm.";
+                        "1-3 = Mainly Clear, " +
+                        "45-48 = Foggy, " +
+                        "51-55 = Drizzle, " +
+                        "61-65 = Rain, " +
+                        "71-77 = Snowfall, " +
+                        "80-82 = Rain Showers, " +
+                        "95-99 = Thunderstorm.";
                     weatherCodeParam.Required = true;
                 }
 
