@@ -171,6 +171,27 @@ public class ProfileRepository : IProfileRepository
             new { ProfileId = profileId });
     }
 
+    public async Task<ProfileProgress?> GetProfileProgressAsync(Guid profileId)
+    {
+        using var connection = new NpgsqlConnection(_connection.ConnectionString);
+        await connection.OpenAsync();
+
+        return await connection.QueryFirstOrDefaultAsync<ProfileProgress>(
+            @"SELECT id            AS Id,
+                     profile_id    AS ProfileId,
+                     current_level AS CurrentLevel,
+                     total_points  AS TotalPoints,
+                     total_quizzes AS TotalQuizzes,
+                     total_correct AS TotalCorrect,
+                     total_missions AS TotalMissions,
+                     streak_days   AS StreakDays,
+                     last_active_at AS LastActiveAt,
+                     updated_at    AS UpdatedAt
+              FROM   public.profile_progress
+              WHERE  profile_id = @ProfileId",
+            new { ProfileId = profileId });
+    }
+
     public async Task AddPointsAndIncrementMissionsAsync(
         Guid profileId, int points, NpgsqlConnection connection, NpgsqlTransaction transaction)
     {

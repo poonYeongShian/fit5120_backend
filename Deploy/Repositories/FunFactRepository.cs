@@ -1,6 +1,6 @@
 using Dapper;
-using Deploy.DTOs;
 using Deploy.Interfaces;
+using Deploy.Models;
 using Npgsql;
 
 namespace Deploy.Repositories;
@@ -14,50 +14,61 @@ public class FunFactRepository : IFunFactRepository
         _connection = connection;
     }
 
-    public async Task<IEnumerable<AnimalFunFactDto>> GetFunFactsByAnimalAsync(int animalId, Guid profileId)
+    public async Task<IEnumerable<AnimalFunFact>> GetFunFactsByAnimalIdAsync(int animalId)
     {
         using var connection = new NpgsqlConnection(_connection.ConnectionString);
         await connection.OpenAsync();
 
-        return await connection.QueryAsync<AnimalFunFactDto>(
+        return await connection.QueryAsync<AnimalFunFact>(
             """
-            SELECT
-                f.id                                                    AS Id,
-                f.emoji                                                 AS Emoji,
-                f.fact_text                                             AS FactText,
-                f.fact_image_url                                        AS FactImageUrl,
-                f.fact_order                                            AS FactOrder,
-                f.unlock_level                                          AS UnlockLevel,
-                f.is_locked                                             AS IsLocked,
-
-                CASE
-                    WHEN f.is_locked = TRUE                         THEN 'locked'
-                    WHEN f.unlock_level > pp.current_level          THEN 'locked'
-                    ELSE                                                 'unlocked'
-                END                                                     AS AccessStatus,
-
-                GREATEST(f.unlock_level - pp.current_level, 0)         AS LevelsNeeded,
-
-                pp.current_level                                        AS UserLevel,
-                pp.total_points                                         AS UserPoints,
-
-                CASE
-                    WHEN puf.id IS NOT NULL THEN TRUE
-                    ELSE FALSE
-                END                                                     AS AlreadyUnlocked
-
-            FROM public.animal_fun_facts f
-
-            JOIN public.profile_progress pp
-                ON pp.profile_id = @ProfileId
-
-            LEFT JOIN public.profile_unlocked_facts puf
-                ON puf.profile_id = pp.profile_id
-               AND puf.fact_id    = f.id
-
-            WHERE f.animal_id = @AnimalId
-            ORDER BY f.fact_order
+            SELECT id            AS Id,
+                   animal_id     AS AnimalId,
+                   emoji         AS Emoji,
+                   fact_text     AS FactText,
+                   fact_image_url AS FactImageUrl,
+                   fact_order    AS FactOrder,
+                   unlock_level  AS UnlockLevel,
+                   is_locked     AS IsLocked,
+                   created_at    AS CreatedAt
+            FROM   public.animal_fun_facts
+            WHERE  animal_id = @AnimalId
+            ORDER BY fact_order
             """,
-            new { AnimalId = animalId, ProfileId = profileId });
+            new { AnimalId = animalId });
+    }
+
+    public async Task<IEnumerable<AnimalFunFact>> GetAllFunFactsAsync()
+    {
+        using var connection = new NpgsqlConnection(_connection.ConnectionString);
+        await connection.OpenAsync();
+
+        return await connection.QueryAsync<AnimalFunFact>(
+            """
+            SELECT id            AS Id,
+                   animal_id     AS AnimalId,
+                   emoji         AS Emoji,
+                   fact_text     AS FactText,
+                   fact_image_url AS FactImageUrl,
+                   fact_order    AS FactOrder,
+                   unlock_level  AS UnlockLevel,
+                   is_locked     AS IsLocked,
+                   created_at    AS CreatedAt
+            FROM   public.animal_fun_facts
+            ORDER BY fact_order
+            """);
+    }
+
+    public async Task<IEnumerable<int>> GetUnlockedFactIdsByProfileAsync(Guid profileId)
+    {
+        using var connection = new NpgsqlConnection(_connection.ConnectionString);
+        await connection.OpenAsync();
+
+        return await connection.QueryAsync<int>(
+            """
+            SELECT fact_id
+            FROM   public.profile_unlocked_facts
+            WHERE  profile_id = @ProfileId
+            """,
+            new { ProfileId = profileId });
     }
 }
