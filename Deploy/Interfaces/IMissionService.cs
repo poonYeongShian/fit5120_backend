@@ -8,4 +8,5 @@ public interface IMissionService
     Task<int?> AssignMissionAsync(Guid profileId, int missionId, int? weatherCode, bool? isDay, decimal? weatherTemp, decimal? locationLat, decimal? locationLon);
     Task<bool> StartMissionAsync(int profileMissionId);
     Task<CompleteMissionResponseDto?> CompleteMissionAsync(int profileMissionId);
+    Task<List<CompletedMissionHistoryDto>> GetCompletedMissionHistoryAsync(Guid profileId);
 }

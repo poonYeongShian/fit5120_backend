@@ -5,20 +5,20 @@ using Microsoft.OpenApi.Models;
 
 namespace Deploy.Endpoints;
 
-public static class FunFactEndpoints
+public static class BadgeEndpoints
 {
-    public static void MapFunFactEndpoints(this WebApplication app)
+    public static void MapBadgeEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/api/animals/{animalId:int}/fun-facts")
-            .WithTags("Fun Facts");
+        var group = app.MapGroup("/api/badges")
+            .WithTags("Badges");
 
-        group.MapGet("/", GetFunFacts)
-            .WithName("GetAnimalFunFacts")
+        group.MapGet("/", GetBadgeCollection)
+            .WithName("GetBadgeCollection")
             .WithDescription(
-                "Returns all fun facts for an animal with personalised lock/unlock status " +
-                "based on the requesting profile's current level. " +
+                "Returns all badges (earned and not yet earned) for the authenticated profile, " +
+                "including unlock status, progress percentage, and criteria to unlock each badge. " +
                 "Supply the session token via the X-Session-Token header.")
-            .Produces<IEnumerable<AnimalFunFactDto>>(StatusCodes.Status200OK)
+            .Produces<IEnumerable<BadgeCollectionDto>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces<ErrorResponseDto>(StatusCodes.Status404NotFound)
             .WithOpenApi(operation =>
@@ -33,7 +33,7 @@ public static class FunFactEndpoints
                 });
 
                 operation.Responses["200"].Description =
-                    "Fun facts with access_status ('locked'/'unlocked'), levels_needed and profile level info.";
+                    "All badges with unlock status, progress percentage, and criteria.";
                 operation.Responses["401"].Description =
                     "Session token missing, invalid, expired or does not belong to this profile.";
                 operation.Responses["404"].Description =
@@ -42,12 +42,10 @@ public static class FunFactEndpoints
             });
     }
 
-
-    private static async Task<Results<Ok<IEnumerable<AnimalFunFactDto>>, UnauthorizedHttpResult, NotFound<ErrorResponseDto>>> GetFunFacts(
-        int animalId,
+    private static async Task<Results<Ok<IEnumerable<BadgeCollectionDto>>, UnauthorizedHttpResult, NotFound<ErrorResponseDto>>> GetBadgeCollection(
         HttpContext httpContext,
         IProfileService profileService,
-        IFunFactService service)
+        IBadgeService badgeService)
     {
         var sessionToken = httpContext.Request.Headers["X-Session-Token"].FirstOrDefault();
 
@@ -59,11 +57,11 @@ public static class FunFactEndpoints
         if (session is null)
             return TypedResults.Unauthorized();
 
-        var facts = await service.GetFunFactsByAnimalAsync(animalId, session.ProfileId);
+        var badges = await badgeService.GetBadgeCollectionAsync(session.ProfileId);
 
-        if (facts is null)
+        if (badges is null)
             return TypedResults.NotFound(new ErrorResponseDto { ErrorCode = "PROFILE_NOT_FOUND" });
 
-        return TypedResults.Ok(facts);
+        return TypedResults.Ok(badges);
     }
 }

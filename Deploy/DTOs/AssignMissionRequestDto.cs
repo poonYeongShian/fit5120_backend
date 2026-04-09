@@ -2,7 +2,6 @@ namespace Deploy.DTOs;
 
 public class AssignMissionRequestDto
 {
-    public Guid ProfileId { get; set; }
     public int MissionId { get; set; }
     public int? WeatherCode { get; set; }
     public bool? IsDay { get; set; }

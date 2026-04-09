@@ -8,4 +8,5 @@ public interface IQuizService
     Task<IEnumerable<QuizQuestionDto>?> GetQuestionsByQuizIdAsync(int quizId);
     Task<IEnumerable<QuizQuestionDto>> GetRandomQuestionsAsync(int count);
     Task<IEnumerable<QuizQuestionDto>> GetRandomQuestionsByAnimalIdAsync(int animalId, int count);
+    Task<SaveQuizProgressResponseDto?> SaveQuizProgressAsync(Guid profileId, SaveQuizProgressRequestDto request);
 }

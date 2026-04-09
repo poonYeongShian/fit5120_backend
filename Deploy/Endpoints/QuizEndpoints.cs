@@ -1,6 +1,7 @@
 using Deploy.DTOs;
 using Deploy.Interfaces;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.OpenApi.Models;
 
 namespace Deploy.Endpoints;
 
@@ -70,6 +71,32 @@ public static class QuizEndpoints
                 operation.Responses["404"].Description = "Quiz not found. Error code: QUIZ_NOT_FOUND.";
                 return operation;
             });
+
+        group.MapPost("/save-progress", SaveQuizProgress)
+            .WithName("SaveQuizProgress")
+            .WithDescription(
+                "Saves quiz progress for the authenticated user. Computes score and points server-side, " +
+                "updates level, unlocks facts, and awards badges atomically. " +
+                "Supply the session token via the X-Session-Token header.")
+            .Produces<SaveQuizProgressResponseDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces<ErrorResponseDto>(StatusCodes.Status400BadRequest)
+            .WithOpenApi(operation =>
+            {
+                operation.Parameters.Add(new OpenApiParameter
+                {
+                    Name = "X-Session-Token",
+                    In = ParameterLocation.Header,
+                    Required = true,
+                    Description = "Session token issued during profile creation or restore.",
+                    Schema = new OpenApiSchema { Type = "string" }
+                });
+
+                operation.Responses["200"].Description = "Quiz progress saved successfully. Returns updated profile progress, level-up status, and any new badges earned.";
+                operation.Responses["401"].Description = "Session token missing, invalid, expired or does not belong to this profile.";
+                operation.Responses["400"].Description = "Invalid request. Error codes: INVALID_TOTAL_QUESTIONS, INVALID_CORRECT_ANSWERS.";
+                return operation;
+            });
     }
 
     private static async Task<Ok<IEnumerable<QuizDto>>> GetAllQuizzes(IQuizService service)
@@ -107,5 +134,27 @@ public static class QuizEndpoints
             return TypedResults.NotFound(new ErrorResponseDto { ErrorCode = "QUIZ_NOT_FOUND" });
 
         return TypedResults.Ok(questions);
+    }
+
+    private static async Task<Results<Ok<SaveQuizProgressResponseDto>, UnauthorizedHttpResult, BadRequest<ErrorResponseDto>>> SaveQuizProgress(
+        SaveQuizProgressRequestDto request, HttpContext httpContext, IQuizService quizService, IProfileService profileService)
+    {
+        var sessionToken = httpContext.Request.Headers["X-Session-Token"].FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(sessionToken))
+            return TypedResults.Unauthorized();
+
+        var session = await profileService.AutoLoginAsync(sessionToken);
+        if (session is null)
+            return TypedResults.Unauthorized();
+
+        if (request.TotalQuestions < 1)
+            return TypedResults.BadRequest(new ErrorResponseDto { ErrorCode = "INVALID_TOTAL_QUESTIONS" });
+
+        if (request.CorrectAnswers < 0 || request.CorrectAnswers > request.TotalQuestions)
+            return TypedResults.BadRequest(new ErrorResponseDto { ErrorCode = "INVALID_CORRECT_ANSWERS" });
+
+        var result = await quizService.SaveQuizProgressAsync(session.ProfileId, request);
+
+        return TypedResults.Ok(result!);
     }
 }
