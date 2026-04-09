@@ -98,14 +98,10 @@ public class MissionRepository : IMissionRepository
         return rows > 0;
     }
 
-    public async Task<CompleteMissionResponseDto?> CompleteMissionAsync(int profileMissionId)
+    public async Task<(int PointsEarned, Guid ProfileId)?> MarkMissionCompletedAsync(
+        int profileMissionId, NpgsqlConnection connection, NpgsqlTransaction transaction)
     {
-        using var connection = new NpgsqlConnection(_connection.ConnectionString);
-        await connection.OpenAsync();
-        using var transaction = await connection.BeginTransactionAsync();
-
-        // Step 1: Mark mission as completed; get points_reward and profile_id from the row
-        var step1 = await connection.QueryFirstOrDefaultAsync<(int PointsEarned, Guid ProfileId)?>(
+        return await connection.QueryFirstOrDefaultAsync<(int PointsEarned, Guid ProfileId)?>(
             """
             UPDATE public.profile_missions pm
             SET    status        = 'completed',
@@ -119,136 +115,32 @@ public class MissionRepository : IMissionRepository
             """,
             new { ProfileMissionId = profileMissionId },
             transaction);
+    }
 
-        if (step1 is null)
-            return null;
+    public async Task<List<CompletedMissionHistoryDto>> GetCompletedMissionHistoryAsync(Guid profileId)
+    {
+        using var connection = new NpgsqlConnection(_connection.ConnectionString);
+        await connection.OpenAsync();
 
-        var points = step1.Value.PointsEarned;
-        var profileId = step1.Value.ProfileId;
-
-        // Step 2: Add points and increment mission counter
-        await connection.ExecuteAsync(
+        var results = await connection.QueryAsync<CompletedMissionHistoryDto>(
             """
-            UPDATE public.profile_progress
-            SET    total_points   = total_points + @Points,
-                   total_missions = total_missions + 1,
-                   last_active_at = now(),
-                   updated_at     = now()
-            WHERE  profile_id = @ProfileId
+            SELECT m.id             AS MissionId,
+                   m.title          AS Title,
+                   m.description    AS Description,
+                   mt.type_name     AS TypeName,
+                   pm.points_earned AS PointsEarned,
+                   m.is_outdoor     AS IsOutdoor,
+                   m.image_url      AS ImageUrl,
+                   pm.completed_at  AS CompletedAt
+            FROM   public.profile_missions pm
+            JOIN   public.missions m      ON m.id  = pm.mission_id
+            JOIN   public.mission_types mt ON mt.id = m.mission_type_id
+            WHERE  pm.profile_id = @ProfileId
+              AND  pm.status     = 'completed'
+            ORDER BY pm.completed_at DESC
             """,
-            new { ProfileId = profileId, Points = points },
-            transaction);
+            new { ProfileId = profileId });
 
-        // Step 3: Level-up check
-        var previousLevel = await connection.QuerySingleAsync<int>(
-            "SELECT current_level FROM public.profile_progress WHERE profile_id = @ProfileId",
-            new { ProfileId = profileId },
-            transaction);
-
-        await connection.ExecuteAsync(
-            """
-            UPDATE public.profile_progress
-            SET    current_level = (
-                       SELECT COALESCE(MAX(level_number), 1)
-                       FROM   public.levels
-                       WHERE  points_required <= (
-                           SELECT total_points
-                           FROM   public.profile_progress
-                           WHERE  profile_id = @ProfileId
-                       )
-                   ),
-                   updated_at = now()
-            WHERE  profile_id = @ProfileId
-            """,
-            new { ProfileId = profileId },
-            transaction);
-
-        // Step 4: Unlock new fun facts based on new level
-        var newFactsUnlocked = await connection.ExecuteAsync(
-            """
-            INSERT INTO public.profile_unlocked_facts (profile_id, fact_id)
-            SELECT @ProfileId, f.id
-            FROM   public.animal_fun_facts f
-            WHERE  f.unlock_level <= (
-                       SELECT current_level
-                       FROM   public.profile_progress
-                       WHERE  profile_id = @ProfileId
-                   )
-            ON CONFLICT (profile_id, fact_id) DO NOTHING
-            """,
-            new { ProfileId = profileId },
-            transaction);
-
-        // Step 5: Award level badge if leveled up
-        await connection.ExecuteAsync(
-            """
-            INSERT INTO public.profile_badges (profile_id, badge_id, source)
-            SELECT @ProfileId, b.id, 'mission'
-            FROM   public.badges b
-            WHERE  b.badge_type     = 'level'
-              AND  b.level_required = (
-                       SELECT current_level
-                       FROM   public.profile_progress
-                       WHERE  profile_id = @ProfileId
-                   )
-              AND  b.is_active = TRUE
-            ON CONFLICT (profile_id, badge_id) DO NOTHING
-            """,
-            new { ProfileId = profileId },
-            transaction);
-
-        // Step 6: Award mission milestone badge if milestone hit
-        await connection.ExecuteAsync(
-            """
-            INSERT INTO public.profile_badges (profile_id, badge_id, source)
-            SELECT @ProfileId, b.id, 'mission'
-            FROM   public.badges b
-            WHERE  b.badge_type        = 'mission'
-              AND  b.missions_required = (
-                       SELECT total_missions
-                       FROM   public.profile_progress
-                       WHERE  profile_id = @ProfileId
-                   )
-              AND  b.is_active = TRUE
-            ON CONFLICT (profile_id, badge_id) DO NOTHING
-            """,
-            new { ProfileId = profileId },
-            transaction);
-
-        // Read back updated progress
-        var progress = await connection.QuerySingleAsync<(int TotalPoints, int CurrentLevel)>(
-            """
-            SELECT total_points   AS TotalPoints,
-                   current_level  AS CurrentLevel
-            FROM   public.profile_progress
-            WHERE  profile_id = @ProfileId
-            """,
-            new { ProfileId = profileId },
-            transaction);
-
-        // Read back any newly awarded badges from this transaction
-        var newBadges = (await connection.QueryAsync<BadgeDto>(
-            """
-            SELECT b.badge_name     AS BadgeName,
-                   b.badge_image_url AS BadgeImageUrl,
-                   b.description    AS Description
-            FROM   public.profile_badges pb
-            JOIN   public.badges b ON b.id = pb.badge_id
-            WHERE  pb.profile_id = @ProfileId
-              AND  pb.earned_at >= now() - INTERVAL '5 seconds'
-            """,
-            new { ProfileId = profileId },
-            transaction)).ToList();
-
-        await transaction.CommitAsync();
-
-        return new CompleteMissionResponseDto
-        {
-            TotalPoints = progress.TotalPoints,
-            NewLevel = progress.CurrentLevel,
-            LeveledUp = progress.CurrentLevel > previousLevel,
-            NewFactsUnlocked = newFactsUnlocked,
-            NewBadges = newBadges
-        };
+        return results.AsList();
     }
 }

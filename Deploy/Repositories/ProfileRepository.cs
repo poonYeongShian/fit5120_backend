@@ -1,4 +1,5 @@
 using Dapper;
+using Deploy.DTOs;
 using Deploy.Interfaces;
 using Deploy.Models;
 using Npgsql;
@@ -168,5 +169,235 @@ public class ProfileRepository : IProfileRepository
               FROM   public.profile_progress
               WHERE  profile_id = @ProfileId",
             new { ProfileId = profileId });
+    }
+
+    public async Task AddPointsAndIncrementMissionsAsync(
+        Guid profileId, int points, NpgsqlConnection connection, NpgsqlTransaction transaction)
+    {
+        await connection.ExecuteAsync(
+            """
+            UPDATE public.profile_progress
+            SET    total_points   = total_points + @Points,
+                   total_missions = total_missions + 1,
+                   last_active_at = now(),
+                   updated_at     = now()
+            WHERE  profile_id = @ProfileId
+            """,
+            new { ProfileId = profileId, Points = points },
+            transaction);
+    }
+
+    public async Task<int> GetCurrentLevelAsync(
+        Guid profileId, NpgsqlConnection connection, NpgsqlTransaction transaction)
+    {
+        return await connection.QuerySingleAsync<int>(
+            "SELECT current_level FROM public.profile_progress WHERE profile_id = @ProfileId",
+            new { ProfileId = profileId },
+            transaction);
+    }
+
+    public async Task UpdateLevelAsync(
+        Guid profileId, NpgsqlConnection connection, NpgsqlTransaction transaction)
+    {
+        await connection.ExecuteAsync(
+            """
+            UPDATE public.profile_progress
+            SET    current_level = (
+                       SELECT COALESCE(MAX(level_number), 1)
+                       FROM   public.levels
+                       WHERE  points_required <= (
+                           SELECT total_points
+                           FROM   public.profile_progress
+                           WHERE  profile_id = @ProfileId
+                       )
+                   ),
+                   updated_at = now()
+            WHERE  profile_id = @ProfileId
+            """,
+            new { ProfileId = profileId },
+            transaction);
+    }
+
+    public async Task<int> UnlockNewFunFactsAsync(
+        Guid profileId, NpgsqlConnection connection, NpgsqlTransaction transaction)
+    {
+        return await connection.ExecuteAsync(
+            """
+            INSERT INTO public.profile_unlocked_facts (profile_id, fact_id)
+            SELECT @ProfileId, f.id
+            FROM   public.animal_fun_facts f
+            WHERE  f.unlock_level <= (
+                       SELECT current_level
+                       FROM   public.profile_progress
+                       WHERE  profile_id = @ProfileId
+                   )
+            ON CONFLICT (profile_id, fact_id) DO NOTHING
+            """,
+            new { ProfileId = profileId },
+            transaction);
+    }
+
+    public async Task AwardLevelBadgeAsync(
+        Guid profileId, NpgsqlConnection connection, NpgsqlTransaction transaction)
+    {
+        await connection.ExecuteAsync(
+            """
+            INSERT INTO public.profile_badges (profile_id, badge_id, source)
+            SELECT @ProfileId, b.id, 'mission'
+            FROM   public.badges b
+            WHERE  b.badge_type     = 'level'
+              AND  b.level_required = (
+                       SELECT current_level
+                       FROM   public.profile_progress
+                       WHERE  profile_id = @ProfileId
+                   )
+              AND  b.is_active = TRUE
+            ON CONFLICT (profile_id, badge_id) DO NOTHING
+            """,
+            new { ProfileId = profileId },
+            transaction);
+    }
+
+    public async Task AwardMissionMilestoneBadgeAsync(
+        Guid profileId, NpgsqlConnection connection, NpgsqlTransaction transaction)
+    {
+        await connection.ExecuteAsync(
+            """
+            INSERT INTO public.profile_badges (profile_id, badge_id, source)
+            SELECT @ProfileId, b.id, 'mission'
+            FROM   public.badges b
+            WHERE  b.badge_type        = 'mission'
+              AND  b.missions_required = (
+                       SELECT total_missions
+                       FROM   public.profile_progress
+                       WHERE  profile_id = @ProfileId
+                   )
+              AND  b.is_active = TRUE
+            ON CONFLICT (profile_id, badge_id) DO NOTHING
+            """,
+            new { ProfileId = profileId },
+            transaction);
+    }
+
+    public async Task<(int TotalPoints, int CurrentLevel)> GetProgressAsync(
+        Guid profileId, NpgsqlConnection connection, NpgsqlTransaction transaction)
+    {
+        return await connection.QuerySingleAsync<(int TotalPoints, int CurrentLevel)>(
+            """
+            SELECT total_points   AS TotalPoints,
+                   current_level  AS CurrentLevel
+            FROM   public.profile_progress
+            WHERE  profile_id = @ProfileId
+            """,
+            new { ProfileId = profileId },
+            transaction);
+    }
+
+    public async Task<List<BadgeDto>> GetRecentBadgesAsync(
+        Guid profileId, NpgsqlConnection connection, NpgsqlTransaction transaction)
+    {
+        return (await connection.QueryAsync<BadgeDto>(
+            """
+            SELECT b.badge_name      AS BadgeName,
+                   b.badge_image_url AS BadgeImageUrl,
+                   b.description     AS Description
+            FROM   public.profile_badges pb
+            JOIN   public.badges b ON b.id = pb.badge_id
+            WHERE  pb.profile_id = @ProfileId
+              AND  pb.earned_at >= now() - INTERVAL '5 seconds'
+            """,
+            new { ProfileId = profileId },
+            transaction)).ToList();
+    }
+
+    public async Task<int> InsertQuizHistoryAsync(
+        Guid profileId, int score, int totalQuestions,
+        int correctAnswers, int pointsEarned, int levelBefore,
+        NpgsqlConnection connection, NpgsqlTransaction transaction)
+    {
+        return await connection.QuerySingleAsync<int>(
+            """
+            INSERT INTO public.profile_history
+                (profile_id, score, total_questions,
+                 correct_answers, points_earned, level_before)
+            VALUES
+                (@ProfileId, @Score, @TotalQuestions,
+                 @CorrectAnswers, @PointsEarned, @LevelBefore)
+            RETURNING id
+            """,
+            new
+            {
+                ProfileId = profileId,
+                Score = score,
+                TotalQuestions = totalQuestions,
+                CorrectAnswers = correctAnswers,
+                PointsEarned = pointsEarned,
+                LevelBefore = levelBefore
+            },
+            transaction);
+    }
+
+    public async Task AddPointsAndIncrementQuizzesAsync(
+        Guid profileId, int points, int correctAnswers,
+        NpgsqlConnection connection, NpgsqlTransaction transaction)
+    {
+        await connection.ExecuteAsync(
+            """
+            UPDATE public.profile_progress
+            SET    total_points   = total_points + @Points,
+                   total_quizzes  = total_quizzes + 1,
+                   total_correct  = total_correct + @CorrectAnswers,
+                   last_active_at = now(),
+                   updated_at     = now()
+            WHERE  profile_id = @ProfileId
+            """,
+            new { ProfileId = profileId, Points = points, CorrectAnswers = correctAnswers },
+            transaction);
+    }
+
+    public async Task UpdateQuizHistoryLevelAfterAsync(
+        int historyId, Guid profileId,
+        NpgsqlConnection connection, NpgsqlTransaction transaction)
+    {
+        await connection.ExecuteAsync(
+            """
+            UPDATE public.profile_history
+            SET    level_after = (
+                       SELECT current_level
+                       FROM   public.profile_progress
+                       WHERE  profile_id = @ProfileId
+                   ),
+                   leveled_up = (
+                       level_before < (
+                           SELECT current_level
+                           FROM   public.profile_progress
+                           WHERE  profile_id = @ProfileId
+                       )
+                   )
+            WHERE  id = @HistoryId
+            """,
+            new { HistoryId = historyId, ProfileId = profileId },
+            transaction);
+    }
+
+    public async Task AwardQuizLevelBadgeAsync(
+        Guid profileId, NpgsqlConnection connection, NpgsqlTransaction transaction)
+    {
+        await connection.ExecuteAsync(
+            """
+            INSERT INTO public.profile_badges (profile_id, badge_id, source)
+            SELECT @ProfileId, b.id, 'quiz'
+            FROM   public.badges b
+            WHERE  b.badge_type     = 'level'
+              AND  b.level_required = (
+                       SELECT current_level
+                       FROM   public.profile_progress
+                       WHERE  profile_id = @ProfileId
+                   )
+              AND  b.is_active = TRUE
+            ON CONFLICT (profile_id, badge_id) DO NOTHING
+            """,
+            new { ProfileId = profileId },
+            transaction);
     }
 }

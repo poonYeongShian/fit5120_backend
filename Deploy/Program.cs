@@ -25,6 +25,8 @@ builder.Services.AddScoped<IFunFactRepository, FunFactRepository>();
 builder.Services.AddScoped<IFunFactService, FunFactService>();
 builder.Services.AddScoped<IMissionRepository, MissionRepository>();
 builder.Services.AddScoped<IMissionService, MissionService>();
+builder.Services.AddScoped<IBadgeRepository, BadgeRepository>();
+builder.Services.AddScoped<IBadgeService, BadgeService>();
 
 var app = builder.Build();
 
@@ -43,5 +45,6 @@ app.MapQuizEndpoints();
 app.MapProfileEndpoints();
 app.MapFunFactEndpoints();
 app.MapMissionEndpoints();
+app.MapBadgeEndpoints();
 
 await app.RunAsync();
