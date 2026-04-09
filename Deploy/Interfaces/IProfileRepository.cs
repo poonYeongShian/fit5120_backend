@@ -16,6 +16,7 @@ public interface IProfileRepository
 
     Task<RestoreProfileRow?> GetProfileByCodeAndPinAsync(string profileCode, string pin);
     Task<int?> GetCurrentLevelAsync(Guid profileId);
+    Task<ProfileProgress?> GetProfileProgressAsync(Guid profileId);
 
     // Transactional profile-progress and reward methods (connection/transaction managed by caller)
     Task AddPointsAndIncrementMissionsAsync(Guid profileId, int points, NpgsqlConnection connection, NpgsqlTransaction transaction);
