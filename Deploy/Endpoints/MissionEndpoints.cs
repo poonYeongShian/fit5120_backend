@@ -1,3 +1,5 @@
+using Asp.Versioning;
+using Asp.Versioning.Builder;
 using Deploy.DTOs;
 using Deploy.Interfaces;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -7,9 +9,11 @@ namespace Deploy.Endpoints;
 
 public static class MissionEndpoints
 {
-    public static void MapMissionEndpoints(this WebApplication app)
+    public static void MapMissionEndpoints(this WebApplication app, ApiVersionSet apiVersionSet)
     {
-        var group = app.MapGroup("/api/missions")
+        var group = app.MapGroup("/api/v{version:apiVersion}/missions")
+            .WithApiVersionSet(apiVersionSet)
+            .MapToApiVersion(new ApiVersion(1, 0))
             .WithTags("Missions");
 
         group.MapGet("/weather-adaptive", GetWeatherAdaptiveMission)

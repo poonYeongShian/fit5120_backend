@@ -1,4 +1,6 @@
 using Npgsql;
+using Asp.Versioning;
+using Asp.Versioning.Builder;
 using Deploy.Interfaces;
 using Deploy.Repositories;
 using Deploy.Services;
@@ -8,7 +10,30 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+// Add API versioning
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+    options.ApiVersionReader = new UrlSegmentApiVersionReader();
+})
+.AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
+});
+
+// Add Swagger with versioned docs
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "Deploy",
+        Version = "1.0"
+    });
+});
 
 // Add PostgreSQL connection
 var connectionString = builder.Configuration.GetConnectionString("Postgres");
@@ -34,17 +59,26 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Deploy v1");
+    });
 }
 
 app.UseHttpsRedirection();
 
+// Create API version set
+ApiVersionSet apiVersionSet = app.NewApiVersionSet()
+    .HasApiVersion(new ApiVersion(1, 0))
+    .ReportApiVersions()
+    .Build();
+
 // Map endpoints
-app.MapAnimalEndpoints();
-app.MapQuizEndpoints();
-app.MapProfileEndpoints();
-app.MapFunFactEndpoints();
-app.MapMissionEndpoints();
-app.MapBadgeEndpoints();
+app.MapAnimalEndpoints(apiVersionSet);
+app.MapQuizEndpoints(apiVersionSet);
+app.MapProfileEndpoints(apiVersionSet);
+app.MapFunFactEndpoints(apiVersionSet);
+app.MapMissionEndpoints(apiVersionSet);
+app.MapBadgeEndpoints(apiVersionSet);
 
 await app.RunAsync();

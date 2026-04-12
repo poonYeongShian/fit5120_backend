@@ -1,3 +1,5 @@
+using Asp.Versioning;
+using Asp.Versioning.Builder;
 using Deploy.DTOs;
 using Deploy.Interfaces;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -7,9 +9,11 @@ namespace Deploy.Endpoints;
 
 public static class BadgeEndpoints
 {
-    public static void MapBadgeEndpoints(this WebApplication app)
+    public static void MapBadgeEndpoints(this WebApplication app, ApiVersionSet apiVersionSet)
     {
-        var group = app.MapGroup("/api/badges")
+        var group = app.MapGroup("/api/v{version:apiVersion}/badges")
+            .WithApiVersionSet(apiVersionSet)
+            .MapToApiVersion(new ApiVersion(1, 0))
             .WithTags("Badges");
 
         group.MapGet("/", GetBadgeCollection)
