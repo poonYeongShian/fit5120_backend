@@ -1,3 +1,5 @@
+using Asp.Versioning;
+using Asp.Versioning.Builder;
 using Deploy.Constants;
 using Deploy.DTOs;
 using Deploy.Interfaces;
@@ -7,9 +9,11 @@ namespace Deploy.Endpoints;
 
 public static class AnimalEndpoints
 {
-    public static void MapAnimalEndpoints(this WebApplication app)
+    public static void MapAnimalEndpoints(this WebApplication app, ApiVersionSet apiVersionSet)
     {
-        var group = app.MapGroup("/api/animals")
+        var group = app.MapGroup("/api/v{version:apiVersion}/animals")
+            .WithApiVersionSet(apiVersionSet)
+            .MapToApiVersion(new ApiVersion(1, 0))
             .WithTags("Animals");
 
         group.MapGet("/", GetAllAnimals)

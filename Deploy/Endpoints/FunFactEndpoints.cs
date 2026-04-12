@@ -1,3 +1,5 @@
+using Asp.Versioning;
+using Asp.Versioning.Builder;
 using Deploy.DTOs;
 using Deploy.Interfaces;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -7,9 +9,11 @@ namespace Deploy.Endpoints;
 
 public static class FunFactEndpoints
 {
-    public static void MapFunFactEndpoints(this WebApplication app)
+    public static void MapFunFactEndpoints(this WebApplication app, ApiVersionSet apiVersionSet)
     {
-        var group = app.MapGroup("/api/fun-facts")
+        var group = app.MapGroup("/api/v{version:apiVersion}/fun-facts")
+            .WithApiVersionSet(apiVersionSet)
+            .MapToApiVersion(new ApiVersion(1, 0))
             .WithTags("Fun Facts");
 
         group.MapGet("/", GetAllFunFacts)
@@ -69,8 +73,6 @@ public static class FunFactEndpoints
                     "Profile not found. Error code: PROFILE_NOT_FOUND.";
                 return operation;
             });
-
-
     }
 
 
