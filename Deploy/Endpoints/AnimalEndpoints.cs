@@ -19,24 +19,24 @@ public static class AnimalEndpoints
         group.MapGet("/", GetAllAnimals)
             .WithName("GetAnimalList")
             .WithDescription(
-                "Returns a list of animal cards. Optionally filter by category. " +
-                "Available categories: Mammals, Birds, Reptiles, Amphibians, Marine & Freshwater, Insects.")
+                "Returns a list of animal cards. Optionally filter by animal class. " +
+                "Available classes: Mammals, Birds, Reptiles, Amphibians, Marine & Freshwater, Insects.")
             .Produces<IEnumerable<AnimalCardDto>>(StatusCodes.Status200OK)
             .Produces<ErrorResponseDto>(StatusCodes.Status400BadRequest)
             .WithOpenApi(operation =>
             {
-                var categoryParam = operation.Parameters.FirstOrDefault(p => p.Name == "category");
-                if (categoryParam is not null)
+                var classParam = operation.Parameters.FirstOrDefault(p => p.Name == "animalClass");
+                if (classParam is not null)
                 {
-                    categoryParam.Description =
-                        "Filter by animal category. Available values: Mammals, Birds, Reptiles, Amphibians, Marine & Freshwater, Insects.";
-                    categoryParam.Required = false;
+                    classParam.Description =
+                        "Filter by animal class. Available values: Mammals, Birds, Reptiles, Amphibians, Marine & Freshwater, Insects.";
+                    classParam.Required = false;
                 }
 
-                operation.Responses["200"].Description = "A list of animal cards matching the optional category filter.";
+                operation.Responses["200"].Description = "A list of animal cards matching the optional class filter.";
                 operation.Responses["400"].Description =
-                    "Invalid category provided. Error code: INVALID_CATEGORY. " +
-                    "Response includes 'availableCategories' in details.";
+                    "Invalid animal class provided. Error code: INVALID_ANIMAL_CLASS. " +
+                    "Response includes 'availableClasses' in details.";
 
                 return operation;
             });
@@ -72,22 +72,22 @@ public static class AnimalEndpoints
 
     private static async Task<Results<Ok<IEnumerable<AnimalCardDto>>, BadRequest<ErrorResponseDto>>> GetAllAnimals(
         IAnimalService service,
-        string? category = null)
+        string? animalClass = null)
     {
-        if (!string.IsNullOrWhiteSpace(category) &&
-            !AnimalCategories.Available.Contains(category, StringComparer.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(animalClass) &&
+            !AnimalClasses.Available.Contains(animalClass, StringComparer.OrdinalIgnoreCase))
         {
             return TypedResults.BadRequest(new ErrorResponseDto
             {
-                ErrorCode = "INVALID_CATEGORY",
+                ErrorCode = "INVALID_ANIMAL_CLASS",
                 Details = new Dictionary<string, object?>
                 {
-                    ["availableCategories"] = AnimalCategories.Available
+                    ["availableClasses"] = AnimalClasses.Available
                 }
             });
         }
 
-        var animalCards = await service.GetAllAnimalCardsAsync(category);
+        var animalCards = await service.GetAllAnimalCardsAsync(animalClass);
         return TypedResults.Ok(animalCards);
     }
 

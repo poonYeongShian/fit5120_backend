@@ -21,18 +21,19 @@ public class FunFactRepository : IFunFactRepository
 
         return await connection.QueryAsync<AnimalFunFact>(
             """
-            SELECT id            AS Id,
-                   animal_id     AS AnimalId,
-                   emoji         AS Emoji,
-                   fact_text     AS FactText,
-                   fact_image_url AS FactImageUrl,
-                   fact_order    AS FactOrder,
-                   unlock_level  AS UnlockLevel,
-                   is_locked     AS IsLocked,
-                   created_at    AS CreatedAt
-            FROM   public.animal_fun_facts
-            WHERE  animal_id = @AnimalId
-            ORDER BY fact_order
+            SELECT f.animal_fun_fact_id AS Id,
+                   f.animal_id          AS AnimalId,
+                   f.emoji              AS Emoji,
+                   f.fact_text          AS FactText,
+                   f.fact_image_url     AS FactImageUrl,
+                   f.fact_order         AS FactOrder,
+                   f.level_id           AS LevelId,
+                   l.level_number       AS UnlockLevelNumber,
+                   f.created_at         AS CreatedAt
+            FROM   public.animal_fun_fact f
+            JOIN   public.level l ON l.level_id = f.level_id
+            WHERE  f.animal_id = @AnimalId
+            ORDER BY f.fact_order
             """,
             new { AnimalId = animalId });
     }
@@ -44,17 +45,18 @@ public class FunFactRepository : IFunFactRepository
 
         return await connection.QueryAsync<AnimalFunFact>(
             """
-            SELECT id            AS Id,
-                   animal_id     AS AnimalId,
-                   emoji         AS Emoji,
-                   fact_text     AS FactText,
-                   fact_image_url AS FactImageUrl,
-                   fact_order    AS FactOrder,
-                   unlock_level  AS UnlockLevel,
-                   is_locked     AS IsLocked,
-                   created_at    AS CreatedAt
-            FROM   public.animal_fun_facts
-            ORDER BY fact_order
+            SELECT f.animal_fun_fact_id AS Id,
+                   f.animal_id          AS AnimalId,
+                   f.emoji              AS Emoji,
+                   f.fact_text          AS FactText,
+                   f.fact_image_url     AS FactImageUrl,
+                   f.fact_order         AS FactOrder,
+                   f.level_id           AS LevelId,
+                   l.level_number       AS UnlockLevelNumber,
+                   f.created_at         AS CreatedAt
+            FROM   public.animal_fun_fact f
+            JOIN   public.level l ON l.level_id = f.level_id
+            ORDER BY f.fact_order
             """);
     }
 
@@ -65,8 +67,8 @@ public class FunFactRepository : IFunFactRepository
 
         return await connection.QueryAsync<int>(
             """
-            SELECT fact_id
-            FROM   public.profile_unlocked_facts
+            SELECT animal_fun_fact_id
+            FROM   public.profile_unlocked_fact
             WHERE  profile_id = @ProfileId
             """,
             new { ProfileId = profileId });

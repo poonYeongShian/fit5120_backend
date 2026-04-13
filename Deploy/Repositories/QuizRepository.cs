@@ -25,7 +25,7 @@ public class QuizRepository : IQuizRepository
                    title       AS Title,
                    description AS Description,
                    topic       AS Topic
-            FROM quizzes
+            FROM quiz
             ORDER BY quiz_id
             """);
     }
@@ -36,7 +36,7 @@ public class QuizRepository : IQuizRepository
         await connection.OpenAsync();
 
         return await connection.ExecuteScalarAsync<bool>(
-            "SELECT EXISTS(SELECT 1 FROM quizzes WHERE quiz_id = @QuizId)",
+            "SELECT EXISTS(SELECT 1 FROM quiz WHERE quiz_id = @QuizId)",
             new { QuizId = quizId });
     }
 
@@ -56,8 +56,8 @@ public class QuizRepository : IQuizRepository
                 c.choice_label         AS ChoiceLabel,
                 c.choice_text          AS ChoiceText,
                 c.is_correct           AS IsCorrect
-            FROM questions q
-            JOIN choices c ON q.question_id = c.question_id
+            FROM question q
+            JOIN choice c ON q.question_id = c.question_id
             WHERE q.quiz_id = @QuizId
             ORDER BY q.question_id, c.choice_label
             """;
@@ -79,7 +79,7 @@ public class QuizRepository : IQuizRepository
         const string sql = """
             WITH random_questions AS (
                 SELECT question_id
-                FROM questions
+                FROM question
                 ORDER BY RANDOM()
                 LIMIT @Count
             )
@@ -93,9 +93,9 @@ public class QuizRepository : IQuizRepository
                 c.choice_label         AS ChoiceLabel,
                 c.choice_text          AS ChoiceText,
                 c.is_correct           AS IsCorrect
-            FROM questions q
+            FROM question q
             JOIN random_questions rq ON q.question_id = rq.question_id
-            JOIN choices c ON q.question_id = c.question_id
+            JOIN choice c ON q.question_id = c.question_id
             ORDER BY q.question_id, c.choice_label
             """;
 
@@ -116,7 +116,7 @@ public class QuizRepository : IQuizRepository
         const string sql = """
             WITH random_questions AS (
                 SELECT question_id
-                FROM questions
+                FROM question
                 WHERE animal_id = @AnimalId
                 ORDER BY RANDOM()
                 LIMIT @Count
@@ -131,9 +131,9 @@ public class QuizRepository : IQuizRepository
                 c.choice_label         AS ChoiceLabel,
                 c.choice_text          AS ChoiceText,
                 c.is_correct           AS IsCorrect
-            FROM questions q
+            FROM question q
             JOIN random_questions rq ON q.question_id = rq.question_id
-            JOIN choices c ON q.question_id = c.question_id
+            JOIN choice c ON q.question_id = c.question_id
             ORDER BY q.question_id, c.choice_label
             """;
 

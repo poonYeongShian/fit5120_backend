@@ -15,27 +15,26 @@ public class ProfileRepository : IProfileRepository
         _connection = connection;
     }
 
-    public async Task<Profile> CreateProfileAsync(string profileCode, string pin, string displayName, int animalId)
+    public async Task<Profile> CreateProfileAsync(string profileCode, string pin, string displayName)
     {
         using var connection = new NpgsqlConnection(_connection.ConnectionString);
         await connection.OpenAsync();
 
         return await connection.QuerySingleAsync<Profile>(
-            @"INSERT INTO public.profiles
-                  (profile_code, pin, display_name, animal_id)
+            @"INSERT INTO public.profile
+                  (profile_code, pin, display_name)
               VALUES
-                  (@ProfileCode, @Pin, @DisplayName, @AnimalId)
+                  (@ProfileCode, @Pin, @DisplayName)
               RETURNING
-                  id           AS Id,
+                  profile_id   AS Id,
                   profile_code AS ProfileCode,
                   pin          AS Pin,
                   display_name AS DisplayName,
-                  animal_id    AS AnimalId,
                   avatar_url   AS AvatarUrl,
                   is_active    AS IsActive,
                   created_at   AS CreatedAt,
                   updated_at   AS UpdatedAt",
-            new { ProfileCode = profileCode, Pin = pin, DisplayName = displayName, AnimalId = animalId });
+            new { ProfileCode = profileCode, Pin = pin, DisplayName = displayName });
     }
 
     public async Task<ProfileProgress> CreateProfileProgressAsync(Guid profileId)
@@ -49,16 +48,16 @@ public class ProfileRepository : IProfileRepository
               VALUES
                   (@ProfileId, 1, 0)
               RETURNING
-                  id             AS Id,
-                  profile_id     AS ProfileId,
-                  current_level  AS CurrentLevel,
-                  total_points   AS TotalPoints,
-                  total_quizzes  AS TotalQuizzes,
-                  total_correct  AS TotalCorrect,
-                  total_missions AS TotalMissions,
-                  streak_days    AS StreakDays,
-                  last_active_at AS LastActiveAt,
-                  updated_at     AS UpdatedAt",
+                  profile_progress_id AS Id,
+                  profile_id          AS ProfileId,
+                  current_level       AS CurrentLevel,
+                  total_points        AS TotalPoints,
+                  total_quizzes       AS TotalQuizzes,
+                  total_correct       AS TotalCorrect,
+                  total_missions      AS TotalMissions,
+                  streak_days         AS StreakDays,
+                  last_active_at      AS LastActiveAt,
+                  updated_at          AS UpdatedAt",
             new { ProfileId = profileId });
     }
 
@@ -68,19 +67,19 @@ public class ProfileRepository : IProfileRepository
         await connection.OpenAsync();
 
         return await connection.QuerySingleAsync<ProfileSession>(
-            @"INSERT INTO public.profile_sessions
+            @"INSERT INTO public.profile_session
                   (profile_id, session_token, device_info)
               VALUES
                   (@ProfileId, @SessionToken, @DeviceInfo)
               RETURNING
-                  id            AS Id,
-                  profile_id    AS ProfileId,
-                  session_token AS SessionToken,
-                  device_info   AS DeviceInfo,
-                  is_active     AS IsActive,
-                  created_at    AS CreatedAt,
-                  expires_at    AS ExpiresAt,
-                  last_used_at  AS LastUsedAt",
+                  profile_session_id AS Id,
+                  profile_id         AS ProfileId,
+                  session_token      AS SessionToken,
+                  device_info        AS DeviceInfo,
+                  is_active          AS IsActive,
+                  created_at         AS CreatedAt,
+                  expires_at         AS ExpiresAt,
+                  last_used_at       AS LastUsedAt",
             new { ProfileId = profileId, SessionToken = sessionToken, DeviceInfo = deviceInfo });
     }
 
@@ -91,18 +90,17 @@ public class ProfileRepository : IProfileRepository
 
         return await connection.QueryFirstOrDefaultAsync<ProfileAutoLoginRow>(
             @"SELECT
-                  p.id              AS ProfileId,
+                  p.profile_id      AS ProfileId,
                   p.display_name    AS DisplayName,
-                  p.animal_id       AS AnimalId,
                   p.profile_code    AS ProfileCode,
                   pp.current_level  AS CurrentLevel,
                   pp.total_points   AS TotalPoints,
                   pp.total_quizzes  AS TotalQuizzes,
                   pp.total_missions AS TotalMissions,
                   pp.streak_days    AS StreakDays
-              FROM public.profile_sessions ps
-              JOIN public.profiles         p  ON p.id          = ps.profile_id
-              JOIN public.profile_progress pp ON pp.profile_id = p.id
+              FROM public.profile_session ps
+              JOIN public.profile          p  ON p.profile_id  = ps.profile_id
+              JOIN public.profile_progress pp ON pp.profile_id = p.profile_id
               WHERE ps.session_token = @SessionToken
                 AND ps.is_active     = TRUE
                 AND (ps.expires_at IS NULL OR ps.expires_at > now())",
@@ -115,7 +113,7 @@ public class ProfileRepository : IProfileRepository
         await connection.OpenAsync();
 
         await connection.ExecuteAsync(
-            @"UPDATE public.profile_sessions
+            @"UPDATE public.profile_session
               SET last_used_at = now()
               WHERE session_token = @SessionToken",
             new { SessionToken = sessionToken });
@@ -127,7 +125,7 @@ public class ProfileRepository : IProfileRepository
         await connection.OpenAsync();
 
         var rows = await connection.ExecuteAsync(
-            @"UPDATE public.profile_sessions
+            @"UPDATE public.profile_session
               SET    is_active = FALSE
               WHERE  session_token = @SessionToken
                 AND  is_active     = TRUE",
@@ -144,15 +142,14 @@ public class ProfileRepository : IProfileRepository
 
         return await connection.QueryFirstOrDefaultAsync<RestoreProfileRow>(
             @"SELECT
-                  p.id             AS ProfileId,
+                  p.profile_id     AS ProfileId,
                   p.display_name   AS DisplayName,
-                  p.animal_id      AS AnimalId,
                   p.profile_code   AS ProfileCode,
                   pp.current_level AS CurrentLevel,
                   pp.total_points  AS TotalPoints,
                   pp.streak_days   AS StreakDays
-              FROM public.profiles         p
-              JOIN public.profile_progress pp ON pp.profile_id = p.id
+              FROM public.profile          p
+              JOIN public.profile_progress pp ON pp.profile_id = p.profile_id
               WHERE p.profile_code = @ProfileCode
                 AND p.pin          = @Pin
                 AND p.is_active    = TRUE",
@@ -177,16 +174,16 @@ public class ProfileRepository : IProfileRepository
         await connection.OpenAsync();
 
         return await connection.QueryFirstOrDefaultAsync<ProfileProgress>(
-            @"SELECT id            AS Id,
-                     profile_id    AS ProfileId,
-                     current_level AS CurrentLevel,
-                     total_points  AS TotalPoints,
-                     total_quizzes AS TotalQuizzes,
-                     total_correct AS TotalCorrect,
-                     total_missions AS TotalMissions,
-                     streak_days   AS StreakDays,
-                     last_active_at AS LastActiveAt,
-                     updated_at    AS UpdatedAt
+            @"SELECT profile_progress_id AS Id,
+                     profile_id          AS ProfileId,
+                     current_level       AS CurrentLevel,
+                     total_points        AS TotalPoints,
+                     total_quizzes       AS TotalQuizzes,
+                     total_correct       AS TotalCorrect,
+                     total_missions      AS TotalMissions,
+                     streak_days         AS StreakDays,
+                     last_active_at      AS LastActiveAt,
+                     updated_at          AS UpdatedAt
               FROM   public.profile_progress
               WHERE  profile_id = @ProfileId",
             new { ProfileId = profileId });
@@ -225,7 +222,7 @@ public class ProfileRepository : IProfileRepository
             UPDATE public.profile_progress
             SET    current_level = (
                        SELECT COALESCE(MAX(level_number), 1)
-                       FROM   public.levels
+                       FROM   public.level
                        WHERE  points_required <= (
                            SELECT total_points
                            FROM   public.profile_progress
@@ -244,15 +241,16 @@ public class ProfileRepository : IProfileRepository
     {
         return await connection.ExecuteAsync(
             """
-            INSERT INTO public.profile_unlocked_facts (profile_id, fact_id)
-            SELECT @ProfileId, f.id
-            FROM   public.animal_fun_facts f
-            WHERE  f.unlock_level <= (
+            INSERT INTO public.profile_unlocked_fact (profile_id, animal_fun_fact_id)
+            SELECT @ProfileId, f.animal_fun_fact_id
+            FROM   public.animal_fun_fact f
+            JOIN   public.level l ON l.level_id = f.level_id
+            WHERE  l.level_number <= (
                        SELECT current_level
                        FROM   public.profile_progress
                        WHERE  profile_id = @ProfileId
                    )
-            ON CONFLICT (profile_id, fact_id) DO NOTHING
+            ON CONFLICT (profile_id, animal_fun_fact_id) DO NOTHING
             """,
             new { ProfileId = profileId },
             transaction);
@@ -263,9 +261,9 @@ public class ProfileRepository : IProfileRepository
     {
         await connection.ExecuteAsync(
             """
-            INSERT INTO public.profile_badges (profile_id, badge_id, source)
-            SELECT @ProfileId, b.id, 'mission'
-            FROM   public.badges b
+            INSERT INTO public.profile_badge (profile_id, badge_id, source)
+            SELECT @ProfileId, b.badge_id, 'mission'
+            FROM   public.badge b
             WHERE  b.badge_type     = 'level'
               AND  b.level_required = (
                        SELECT current_level
@@ -284,9 +282,9 @@ public class ProfileRepository : IProfileRepository
     {
         await connection.ExecuteAsync(
             """
-            INSERT INTO public.profile_badges (profile_id, badge_id, source)
-            SELECT @ProfileId, b.id, 'mission'
-            FROM   public.badges b
+            INSERT INTO public.profile_badge (profile_id, badge_id, source)
+            SELECT @ProfileId, b.badge_id, 'mission'
+            FROM   public.badge b
             WHERE  b.badge_type        = 'mission'
               AND  b.missions_required = (
                        SELECT total_missions
@@ -322,8 +320,8 @@ public class ProfileRepository : IProfileRepository
             SELECT b.badge_name      AS BadgeName,
                    b.badge_image_url AS BadgeImageUrl,
                    b.description     AS Description
-            FROM   public.profile_badges pb
-            JOIN   public.badges b ON b.id = pb.badge_id
+            FROM   public.profile_badge pb
+            JOIN   public.badge b ON b.badge_id = pb.badge_id
             WHERE  pb.profile_id = @ProfileId
               AND  pb.earned_at >= now() - INTERVAL '5 seconds'
             """,
@@ -344,7 +342,7 @@ public class ProfileRepository : IProfileRepository
             VALUES
                 (@ProfileId, @Score, @TotalQuestions,
                  @CorrectAnswers, @PointsEarned, @LevelBefore)
-            RETURNING id
+            RETURNING profile_history_id
             """,
             new
             {
@@ -395,7 +393,7 @@ public class ProfileRepository : IProfileRepository
                            WHERE  profile_id = @ProfileId
                        )
                    )
-            WHERE  id = @HistoryId
+            WHERE  profile_history_id = @HistoryId
             """,
             new { HistoryId = historyId, ProfileId = profileId },
             transaction);
@@ -406,9 +404,9 @@ public class ProfileRepository : IProfileRepository
     {
         await connection.ExecuteAsync(
             """
-            INSERT INTO public.profile_badges (profile_id, badge_id, source)
-            SELECT @ProfileId, b.id, 'quiz'
-            FROM   public.badges b
+            INSERT INTO public.profile_badge (profile_id, badge_id, source)
+            SELECT @ProfileId, b.badge_id, 'quiz'
+            FROM   public.badge b
             WHERE  b.badge_type     = 'level'
               AND  b.level_required = (
                        SELECT current_level

@@ -6,7 +6,7 @@ namespace Deploy.Interfaces;
 
 public interface IProfileRepository
 {
-    Task<Profile> CreateProfileAsync(string profileCode, string pin, string displayName, int animalId);
+    Task<Profile> CreateProfileAsync(string profileCode, string pin, string displayName);
     Task<ProfileProgress> CreateProfileProgressAsync(Guid profileId);
     Task<ProfileSession> CreateProfileSessionAsync(Guid profileId, string sessionToken, string? deviceInfo);
 

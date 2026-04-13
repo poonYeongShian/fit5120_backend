@@ -16,12 +16,11 @@ public class ProfileService : IProfileService
     public async Task<CreateProfileResponseDto> CreateProfileAsync(CreateProfileRequestDto request)
     {
         // Step 1: Generate a unique profile code and insert the profile row
-        var profileCode = ProfileHelpers.GenerateProfileCode(request.AnimalId);
+        var profileCode = ProfileHelpers.GenerateProfileCode();
         var profile = await _repository.CreateProfileAsync(
             profileCode,
             request.Pin,
-            request.DisplayName,
-            request.AnimalId);
+            request.DisplayName);
 
         // Step 2: Initialise the profile's progress row (level 1, 0 points)
         await _repository.CreateProfileProgressAsync(profile.Id);
@@ -55,7 +54,6 @@ public class ProfileService : IProfileService
         {
             ProfileId    = row.ProfileId,
             DisplayName  = row.DisplayName,
-            AnimalId     = row.AnimalId,
             ProfileCode  = row.ProfileCode,
             CurrentLevel = row.CurrentLevel,
             TotalPoints  = row.TotalPoints,
@@ -87,7 +85,6 @@ public class ProfileService : IProfileService
         {
             ProfileId    = row.ProfileId,
             DisplayName  = row.DisplayName,
-            AnimalId     = row.AnimalId,
             ProfileCode  = row.ProfileCode,
             CurrentLevel = row.CurrentLevel,
             TotalPoints  = row.TotalPoints,

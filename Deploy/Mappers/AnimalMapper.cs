@@ -5,14 +5,14 @@ namespace Deploy.Mappers;
 
 public static class AnimalMapper
 {
-    public static AnimalCardDto ToAnimalCardDto(Animal animal, Category? category, ConservationStatus? conservationStatus)
+    public static AnimalCardDto ToAnimalCardDto(Animal animal, AnimalClass? animalClass, ConservationStatus? conservationStatus)
     {
         return new AnimalCardDto
         {
             Id = animal.Id,
             CommonName = animal.CommonName,
             ScientificName = animal.ScientificName,
-            Category = category?.Name ?? string.Empty,
+            AnimalClass = animalClass?.ClassName ?? string.Empty,
             StatusCode = conservationStatus?.Code ?? string.Empty,
             StatusLabel = conservationStatus?.Label ?? string.Empty,
             ImageUrl = animal.ImageUrl,
@@ -21,29 +21,45 @@ public static class AnimalMapper
     }
 
     public static IEnumerable<AnimalCardDto> ToAnimalCardDtoList(
-        IEnumerable<(Animal Animal, Category? Category, ConservationStatus? ConservationStatus)> items)
+        IEnumerable<(Animal Animal, AnimalClass? AnimalClass, ConservationStatus? ConservationStatus)> items)
     {
-        return items.Select(i => ToAnimalCardDto(i.Animal, i.Category, i.ConservationStatus));
+        return items.Select(i => ToAnimalCardDto(i.Animal, i.AnimalClass, i.ConservationStatus));
     }
 
-    public static AnimalCardDetailDto ToAnimalCardDetailDto(Animal animal, Category? category, ConservationStatus? conservationStatus)
+    public static AnimalCardDetailDto ToAnimalCardDetailDto(
+        Animal animal,
+        AnimalClass? animalClass,
+        ConservationStatus? conservationStatus,
+        IEnumerable<(ThreatDetail Detail, ThreatCategory Category)>? threats = null,
+        IEnumerable<(HabitatDetail Detail, HabitatCategory Category)>? habitats = null)
     {
         return new AnimalCardDetailDto
         {
             CommonName = animal.CommonName,
             ScientificName = animal.ScientificName,
-            CategoryName = category?.Name ?? string.Empty,
+            ClassName = animalClass?.ClassName ?? string.Empty,
             ConservationCode = conservationStatus?.Code ?? string.Empty,
             ConservationLabel = conservationStatus?.Label ?? string.Empty,
             ConservationDescription = conservationStatus?.Description ?? string.Empty,
-            ConservationReason = animal.ConservationReason,
             ImageUrl = animal.ImageUrl,
             AvatarPath = animal.AvatarPath,
             SeverityOrder = conservationStatus?.SeverityOrder ?? 0,
             Habitat = animal.Habitat,
             Diet = animal.Diet,
             Lifespan = animal.Lifespan,
-            Description = animal.Description
+            Description = animal.Description,
+            Threats = threats?.Select(t => new ThreatDetailDto
+            {
+                ThreatName = t.Category.ThreatName,
+                Explanation = t.Detail.Explanation,
+                Priority = t.Detail.Priority
+            }) ?? [],
+            Habitats = habitats?.Select(h => new HabitatDetailDto
+            {
+                HabitatName = h.Category.HabitatName,
+                Priority = h.Detail.Priority,
+                Emoji = h.Detail.Emoji
+            }) ?? []
         };
     }
 
@@ -51,11 +67,8 @@ public static class AnimalMapper
     {
         return new AnimalOccurrenceDto
         {
-            LocationName = occurrence.LocationName,
             Latitude = occurrence.Latitude,
-            Longitude = occurrence.Longitude,
-            ObservedAt = occurrence.ObservedAt,
-            Notes = occurrence.Notes
+            Longitude = occurrence.Longitude
         };
     }
 

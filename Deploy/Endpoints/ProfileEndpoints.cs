@@ -108,15 +108,14 @@ public static class ProfileEndpoints
         IProfileService service)
     {
         if (string.IsNullOrWhiteSpace(request.DisplayName) ||
-            string.IsNullOrWhiteSpace(request.Pin)         ||
-            request.AnimalId <= 0)
+            string.IsNullOrWhiteSpace(request.Pin))
         {
             return TypedResults.BadRequest(new ErrorResponseDto
             {
                 ErrorCode = "INVALID_REQUEST",
                 Details = new Dictionary<string, object?>
                 {
-                    ["message"] = "DisplayName, Pin and a valid AnimalId are required."
+                    ["message"] = "DisplayName and Pin are required."
                 }
             });
         }

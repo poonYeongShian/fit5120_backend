@@ -8,7 +8,7 @@ public class AnimalFunFact
     public string FactText { get; set; } = string.Empty;
     public string? FactImageUrl { get; set; }
     public int FactOrder { get; set; } = 1;
-    public int UnlockLevel { get; set; } = 1;
-    public bool IsLocked { get; set; } = false;
+    public int LevelId { get; set; } = 1;
+    public int UnlockLevelNumber { get; set; } = 1;
     public DateTimeOffset CreatedAt { get; set; }
 }
