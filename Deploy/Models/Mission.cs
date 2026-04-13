@@ -1,7 +1,7 @@
 namespace Deploy.Models;
 
 /// <summary>
-/// Maps to the <c>public.missions</c> table.
+/// Maps to the <c>public.mission</c> table.
 /// A mission card with three ordered steps and an optional time limit,
 /// filtered by weather / time-of-day conditions.
 /// </summary>
@@ -9,7 +9,7 @@ public class Mission
 {
     public int Id { get; set; }
 
-    /// <summary>Foreign key ? <c>public.mission_types(id)</c>.</summary>
+    /// <summary>Foreign key ? <c>public.mission_type(mission_type_id)</c>.</summary>
     public int MissionTypeId { get; set; }
 
     public string Title { get; set; } = string.Empty;

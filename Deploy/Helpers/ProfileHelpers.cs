@@ -6,12 +6,12 @@ public static class ProfileHelpers
         ["TIG", "FOX", "EAG", "OWL", "BEA", "WLF", "LNX", "DEE", "HAR", "OTR"];
 
     /// <summary>
-    /// Generates a unique profile code using a 3-letter prefix derived from
-    /// <paramref name="animalId"/> and 4 random digits, e.g. "TIG-4821".
+    /// Generates a unique profile code using a random 3-letter prefix
+    /// and 4 random digits, e.g. "TIG-4821".
     /// </summary>
-    public static string GenerateProfileCode(int animalId)
+    public static string GenerateProfileCode()
     {
-        var prefix = Prefixes[animalId % Prefixes.Length];
+        var prefix = Prefixes[Random.Shared.Next(Prefixes.Length)];
         var digits = Random.Shared.Next(1000, 9999);
         return $"{prefix}-{digits}";
     }

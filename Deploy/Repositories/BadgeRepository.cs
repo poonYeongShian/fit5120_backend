@@ -22,7 +22,7 @@ public class BadgeRepository : IBadgeRepository
         return await connection.QueryAsync<BadgeCollectionDto>(
             """
             SELECT
-                b.id                                                    AS Id,
+                b.badge_id                                              AS Id,
                 b.badge_name                                            AS BadgeName,
                 b.badge_image_url                                       AS BadgeImageUrl,
                 b.description                                           AS Description,
@@ -32,14 +32,14 @@ public class BadgeRepository : IBadgeRepository
                 pb.source::text                                         AS Source,
                 pb.earned_at                                            AS EarnedAt,
 
-                CASE WHEN pb.id IS NOT NULL THEN TRUE ELSE FALSE END    AS IsUnlocked,
+                CASE WHEN pb.profile_badge_id IS NOT NULL THEN TRUE ELSE FALSE END AS IsUnlocked,
 
                 pp.current_level                                        AS CurrentLevel,
                 pp.total_points                                         AS TotalPoints,
                 pp.total_missions                                       AS TotalMissions,
 
                 CASE
-                    WHEN pb.id IS NOT NULL THEN 100
+                    WHEN pb.profile_badge_id IS NOT NULL THEN 100
                     WHEN b.badge_type = 'level' THEN
                         LEAST(100, FLOOR(
                             pp.total_points::numeric
@@ -55,21 +55,21 @@ public class BadgeRepository : IBadgeRepository
                     ELSE 0
                 END                                                     AS ProgressPercentage
 
-            FROM   public.badges b
+            FROM   public.badge b
 
             CROSS JOIN public.profile_progress pp
 
-            LEFT JOIN public.profile_badges pb
-                   ON pb.badge_id    = b.id
+            LEFT JOIN public.profile_badge pb
+                   ON pb.badge_id    = b.badge_id
                   AND pb.profile_id  = @ProfileId
 
-            LEFT JOIN public.levels lreq
+            LEFT JOIN public.level lreq
                    ON lreq.level_number = b.level_required
 
             WHERE  pp.profile_id = @ProfileId
               AND  b.is_active   = TRUE
 
-            ORDER BY b.badge_type, b.id
+            ORDER BY b.badge_type, b.badge_id
             """,
             new { ProfileId = profileId });
     }

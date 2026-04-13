@@ -7,8 +7,7 @@ public class AnimalFunFactDto
     public string FactText { get; set; } = string.Empty;
     public string? FactImageUrl { get; set; }
     public int FactOrder { get; set; }
-    public int UnlockLevel { get; set; }
-    public bool IsLocked { get; set; }
+    public int UnlockLevelNumber { get; set; }
     public string AccessStatus { get; set; } = string.Empty;   // "locked" | "unlocked"
     public int LevelsNeeded { get; set; }
     public int UserLevel { get; set; }

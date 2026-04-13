@@ -13,9 +13,9 @@ public class AnimalService : IAnimalService
         _repository = repository;
     }
 
-    public async Task<IEnumerable<AnimalCardDto>> GetAllAnimalCardsAsync(string? category = null)
+    public async Task<IEnumerable<AnimalCardDto>> GetAllAnimalCardsAsync(string? animalClass = null)
     {
-        var items = await _repository.GetAllAnimalsWithDetailsAsync(category);
+        var items = await _repository.GetAllAnimalsWithDetailsAsync(animalClass);
         return AnimalMapper.ToAnimalCardDtoList(items);
     }
 
@@ -26,10 +26,12 @@ public class AnimalService : IAnimalService
         if (animal is null)
             return null;
 
-        var category = await _repository.GetCategoryByIdAsync(animal.CategoryId);
+        var animalClass = await _repository.GetAnimalClassByIdAsync(animal.ClassId);
         var conservationStatus = await _repository.GetConservationStatusByIdAsync(animal.ConservationStatusId);
+        var threats = await _repository.GetThreatDetailsByAnimalIdAsync(animalId);
+        var habitats = await _repository.GetHabitatDetailsByAnimalIdAsync(animalId);
 
-        return AnimalMapper.ToAnimalCardDetailDto(animal, category, conservationStatus);
+        return AnimalMapper.ToAnimalCardDetailDto(animal, animalClass, conservationStatus, threats, habitats);
     }
 
     public async Task<IEnumerable<AnimalOccurrenceDto>?> GetAnimalOccurrencesAsync(int animalId)

@@ -3,7 +3,7 @@
 namespace Deploy.Models;
 
 /// <summary>
-/// Maps to the <c>public.badges</c> table.
+/// Maps to the <c>public.badge</c> table.
 /// Shared badge definitions used by both quiz (level-up) and mission (milestone) flows.
 /// </summary>
 public class Badge
@@ -19,7 +19,7 @@ public class Badge
     /// <summary>
     /// The level number a profile must reach to earn this badge.
     /// Only relevant when <see cref="BadgeType"/> is <see cref="BadgeTypeEnum.Level"/>.
-    /// Foreign key → <c>public.levels(level_number)</c>.
+    /// Foreign key → <c>public.level(level_number)</c>.
     /// </summary>
     public int? LevelRequired { get; set; }
 

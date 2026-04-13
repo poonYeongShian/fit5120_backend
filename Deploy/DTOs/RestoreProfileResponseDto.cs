@@ -4,7 +4,6 @@ public class RestoreProfileResponseDto
 {
     public Guid ProfileId { get; set; }
     public string DisplayName { get; set; } = string.Empty;
-    public int AnimalId { get; set; }
     public string ProfileCode { get; set; } = string.Empty;
     public int CurrentLevel { get; set; }
     public int TotalPoints { get; set; }
