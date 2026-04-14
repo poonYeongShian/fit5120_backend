@@ -34,7 +34,7 @@ public static class QuizMapper
                     QuestionId = question.Id,
                     AnimalId = question.AnimalId,
                     QuestionText = question.QuestionText,
-                    Hint = question.Hint,
+                    Explanation = question.Explanation,
                     Difficulty = question.Difficulty.ToString().ToLowerInvariant(),
                     Choices = g.Select(r => new QuizChoiceDto
                     {
