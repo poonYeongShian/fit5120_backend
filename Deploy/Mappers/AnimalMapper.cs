@@ -44,7 +44,6 @@ public static class AnimalMapper
             ImageUrl = animal.ImageUrl,
             AvatarPath = animal.AvatarPath,
             SeverityOrder = conservationStatus?.SeverityOrder ?? 0,
-            Habitat = animal.Habitat,
             Diet = animal.Diet,
             Lifespan = animal.Lifespan,
             Description = animal.Description,

@@ -6,7 +6,6 @@ public class Animal
     public string CommonName { get; set; } = string.Empty;
     public string ScientificName { get; set; } = string.Empty;
     public int ClassId { get; set; }
-    public string? Habitat { get; set; }
     public string? Diet { get; set; }
     public string? Lifespan { get; set; }
     public string? Description { get; set; }
