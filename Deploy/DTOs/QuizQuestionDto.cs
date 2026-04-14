@@ -12,7 +12,7 @@ public class QuizQuestionDto
     public int QuestionId { get; set; }
     public int? AnimalId { get; set; }
     public string QuestionText { get; set; } = string.Empty;
-    public string? Hint { get; set; }
+    public string? Explanation { get; set; }
     public string Difficulty { get; set; } = string.Empty;
     public IEnumerable<QuizChoiceDto> Choices { get; set; } = [];
 }

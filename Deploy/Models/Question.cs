@@ -8,7 +8,7 @@ public class Question
     public int QuizId { get; set; }
     public int? AnimalId { get; set; }
     public string QuestionText { get; set; } = string.Empty;
-    public string? Hint { get; set; }
+    public string? Explanation { get; set; }
     public DifficultyLevel Difficulty { get; set; } = DifficultyLevel.Easy;
     public string? ImageUrl { get; set; }
 
