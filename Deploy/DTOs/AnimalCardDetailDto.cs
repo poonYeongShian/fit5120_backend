@@ -11,7 +11,6 @@ public class AnimalCardDetailDto
     public string? ImageUrl { get; set; }
     public string? AvatarPath { get; set; }
     public short SeverityOrder { get; set; }
-    public string? Habitat { get; set; }
     public string? Diet { get; set; }
     public string? Lifespan { get; set; }
     public string? Description { get; set; }
