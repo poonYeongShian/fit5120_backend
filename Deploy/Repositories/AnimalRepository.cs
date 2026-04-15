@@ -23,7 +23,7 @@ public class AnimalRepository : IAnimalRepository
             @"SELECT animal_id               AS Id,
                      common_name             AS CommonName,
                      scientific_name         AS ScientificName,
-                     class_id                AS ClassId,
+                     group_id                AS GroupId,
                      diet                    AS Diet,
                      lifespan                AS Lifespan,
                      description             AS Description,
@@ -36,16 +36,16 @@ public class AnimalRepository : IAnimalRepository
             new { Id = animalId });
     }
 
-    public async Task<AnimalClass?> GetAnimalClassByIdAsync(int classId)
+    public async Task<AnimalGroup?> GetAnimalGroupByIdAsync(int groupId)
     {
         using var connection = new NpgsqlConnection(_connection.ConnectionString);
         await connection.OpenAsync();
 
-        return await connection.QueryFirstOrDefaultAsync<AnimalClass>(
-            @"SELECT class_id   AS ClassId,
-                     class_name AS ClassName
-              FROM animal_class WHERE class_id = @ClassId",
-            new { ClassId = classId });
+        return await connection.QueryFirstOrDefaultAsync<AnimalGroup>(
+            @"SELECT group_id   AS GroupId,
+                     group_name AS GroupName
+              FROM animal_group WHERE group_id = @GroupId",
+            new { GroupId = groupId });
     }
 
     public async Task<ConservationStatus?> GetConservationStatusByIdAsync(int conservationStatusId)
@@ -63,7 +63,7 @@ public class AnimalRepository : IAnimalRepository
             new { Id = conservationStatusId });
     }
 
-    public async Task<IEnumerable<(Animal Animal, AnimalClass? AnimalClass, ConservationStatus? ConservationStatus)>> GetAllAnimalsWithDetailsAsync(string? animalClass = null)
+    public async Task<IEnumerable<(Animal Animal, AnimalGroup? AnimalGroup, ConservationStatus? ConservationStatus)>> GetAllAnimalsWithDetailsAsync(string? animalGroup = null)
     {
         using var connection = new NpgsqlConnection(_connection.ConnectionString);
         await connection.OpenAsync();
@@ -71,7 +71,7 @@ public class AnimalRepository : IAnimalRepository
         var sql = @"SELECT a.animal_id               AS Id,
                      a.common_name             AS CommonName,
                      a.scientific_name         AS ScientificName,
-                     a.class_id                AS ClassId,
+                     a.group_id                AS GroupId,
                      a.diet                    AS Diet,
                      a.lifespan                AS Lifespan,
                      a.conservation_status_id  AS ConservationStatusId,
@@ -79,27 +79,27 @@ public class AnimalRepository : IAnimalRepository
                      a.avatar_path             AS AvatarPath,
                      a.created_at              AS CreatedAt,
                      a.updated_at              AS UpdatedAt,
-                     c.class_id               AS ClassId,
-                     c.class_name             AS ClassName,
+                     g.group_id               AS GroupId,
+                     g.group_name             AS GroupName,
                      cs.conservation_status_id AS Id,
                      cs.code                   AS Code,
                      cs.label                  AS Label,
                      cs.description            AS Description,
                      cs.severity_order         AS SeverityOrder
               FROM animal a
-              LEFT JOIN animal_class c           ON c.class_id = a.class_id
+              LEFT JOIN animal_group g           ON g.group_id = a.group_id
               LEFT JOIN conservation_status cs   ON cs.conservation_status_id = a.conservation_status_id";
 
-        if (!string.IsNullOrWhiteSpace(animalClass))
-            sql += "\n              WHERE LOWER(c.class_name) = LOWER(@AnimalClass)";
+        if (!string.IsNullOrWhiteSpace(animalGroup))
+            sql += "\n              WHERE LOWER(g.group_name) = LOWER(@AnimalGroup)";
 
         sql += "\n              ORDER BY a.animal_id";
 
-        var rows = await connection.QueryAsync<Animal, AnimalClass, ConservationStatus, (Animal, AnimalClass?, ConservationStatus?)>(
+        var rows = await connection.QueryAsync<Animal, AnimalGroup, ConservationStatus, (Animal, AnimalGroup?, ConservationStatus?)>(
             sql,
-            (animal, ac, conservationStatus) => (animal, ac, conservationStatus),
-            new { AnimalClass = animalClass },
-            splitOn: "ClassId,Id");
+            (animal, ag, conservationStatus) => (animal, ag, conservationStatus),
+            new { AnimalGroup = animalGroup },
+            splitOn: "GroupId,Id");
 
         return rows;
     }
