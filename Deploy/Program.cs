@@ -82,3 +82,5 @@ app.MapMissionEndpoints(apiVersionSet);
 app.MapBadgeEndpoints(apiVersionSet);
 
 await app.RunAsync();
+
+public partial class Program { }
