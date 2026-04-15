@@ -5,14 +5,14 @@ namespace Deploy.Mappers;
 
 public static class AnimalMapper
 {
-    public static AnimalCardDto ToAnimalCardDto(Animal animal, AnimalClass? animalClass, ConservationStatus? conservationStatus)
+    public static AnimalCardDto ToAnimalCardDto(Animal animal, AnimalGroup? animalGroup, ConservationStatus? conservationStatus)
     {
         return new AnimalCardDto
         {
             Id = animal.Id,
             CommonName = animal.CommonName,
             ScientificName = animal.ScientificName,
-            AnimalClass = animalClass?.ClassName ?? string.Empty,
+            AnimalClass = animalGroup?.GroupName ?? string.Empty,
             StatusCode = conservationStatus?.Code ?? string.Empty,
             StatusLabel = conservationStatus?.Label ?? string.Empty,
             ImageUrl = animal.ImageUrl,
@@ -21,14 +21,14 @@ public static class AnimalMapper
     }
 
     public static IEnumerable<AnimalCardDto> ToAnimalCardDtoList(
-        IEnumerable<(Animal Animal, AnimalClass? AnimalClass, ConservationStatus? ConservationStatus)> items)
+        IEnumerable<(Animal Animal, AnimalGroup? AnimalGroup, ConservationStatus? ConservationStatus)> items)
     {
-        return items.Select(i => ToAnimalCardDto(i.Animal, i.AnimalClass, i.ConservationStatus));
+        return items.Select(i => ToAnimalCardDto(i.Animal, i.AnimalGroup, i.ConservationStatus));
     }
 
     public static AnimalCardDetailDto ToAnimalCardDetailDto(
         Animal animal,
-        AnimalClass? animalClass,
+        AnimalGroup? animalGroup,
         ConservationStatus? conservationStatus,
         IEnumerable<(ThreatDetail Detail, ThreatCategory Category)>? threats = null,
         IEnumerable<(HabitatDetail Detail, HabitatCategory Category)>? habitats = null)
@@ -37,7 +37,7 @@ public static class AnimalMapper
         {
             CommonName = animal.CommonName,
             ScientificName = animal.ScientificName,
-            ClassName = animalClass?.ClassName ?? string.Empty,
+            ClassName = animalGroup?.GroupName ?? string.Empty,
             ConservationCode = conservationStatus?.Code ?? string.Empty,
             ConservationLabel = conservationStatus?.Label ?? string.Empty,
             ConservationDescription = conservationStatus?.Description ?? string.Empty,

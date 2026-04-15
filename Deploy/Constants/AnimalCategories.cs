@@ -1,9 +1,9 @@
 namespace Deploy.Constants;
 
 /// <summary>
-/// Available animal classes for filtering animals.
+/// Available animal groups for filtering animals.
 /// </summary>
-public static class AnimalClasses
+public static class AnimalGroups
 {
     public static readonly string[] Available =
     [

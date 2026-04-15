@@ -5,7 +5,7 @@ public class Animal
     public int Id { get; set; }
     public string CommonName { get; set; } = string.Empty;
     public string ScientificName { get; set; } = string.Empty;
-    public int ClassId { get; set; }
+    public int GroupId { get; set; }
     public string? Diet { get; set; }
     public string? Lifespan { get; set; }
     public string? Description { get; set; }
@@ -16,6 +16,6 @@ public class Animal
     public DateTime UpdatedAt { get; set; }
 
     // Navigation properties
-    public AnimalClass? AnimalClass { get; set; }
+    public AnimalGroup? AnimalGroup { get; set; }
     public ConservationStatus? ConservationStatus { get; set; }
 }

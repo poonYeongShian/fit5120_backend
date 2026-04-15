@@ -19,8 +19,8 @@ public static class AnimalEndpoints
         group.MapGet("/", GetAllAnimals)
             .WithName("GetAnimalList")
             .WithDescription(
-                "Returns a list of animal cards. Optionally filter by animal class. " +
-                "Available classes: Mammals, Birds, Reptiles, Amphibians, Marine & Freshwater, Insects.")
+                "Returns a list of animal cards. Optionally filter by animal group. " +
+                "Available groups: Mammals, Birds, Reptiles, Amphibians, Marine & Freshwater, Insects.")
             .Produces<IEnumerable<AnimalCardDto>>(StatusCodes.Status200OK)
             .Produces<ErrorResponseDto>(StatusCodes.Status400BadRequest)
             .WithOpenApi(operation =>
@@ -29,14 +29,14 @@ public static class AnimalEndpoints
                 if (classParam is not null)
                 {
                     classParam.Description =
-                        "Filter by animal class. Available values: Mammals, Birds, Reptiles, Amphibians, Marine & Freshwater, Insects.";
+                        "Filter by animal group. Available values: Mammals, Birds, Reptiles, Amphibians, Marine & Freshwater, Insects.";
                     classParam.Required = false;
                 }
 
-                operation.Responses["200"].Description = "A list of animal cards matching the optional class filter.";
+                operation.Responses["200"].Description = "A list of animal cards matching the optional group filter.";
                 operation.Responses["400"].Description =
-                    "Invalid animal class provided. Error code: INVALID_ANIMAL_CLASS. " +
-                    "Response includes 'availableClasses' in details.";
+                    "Invalid animal group provided. Error code: INVALID_ANIMAL_GROUP. " +
+                    "Response includes 'availableGroups' in details.";
 
                 return operation;
             });
@@ -75,14 +75,14 @@ public static class AnimalEndpoints
         string? animalClass = null)
     {
         if (!string.IsNullOrWhiteSpace(animalClass) &&
-            !AnimalClasses.Available.Contains(animalClass, StringComparer.OrdinalIgnoreCase))
+            !AnimalGroups.Available.Contains(animalClass, StringComparer.OrdinalIgnoreCase))
         {
             return TypedResults.BadRequest(new ErrorResponseDto
             {
-                ErrorCode = "INVALID_ANIMAL_CLASS",
+                ErrorCode = "INVALID_ANIMAL_GROUP",
                 Details = new Dictionary<string, object?>
                 {
-                    ["availableClasses"] = AnimalClasses.Available
+                    ["availableGroups"] = AnimalGroups.Available
                 }
             });
         }
