@@ -41,6 +41,12 @@ jobs:
       - name: Login to ECR repo
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
+      - name: Inject TTS secrets into appsettings.json
+        run: |-
+          sed -i 's|#{TTS_ELEVENLABSAPIKEY}#|${{ secrets.TTS__ELEVENLABSAPIKEY }}|g' Deploy/appsettings.json
+          sed -i 's|#{TTS_DEFAULTVOICE}#|${{ secrets.TTS__DEFAULTVOICE }}|g' Deploy/appsettings.json
+          sed -i 's|#{TTS_MODELID}#|${{ secrets.TTS__MODELID }}|g' Deploy/appsettings.json
+          sed -i 's|#{TTS_BASEURL}#|${{ secrets.TTS__BASEURL }}|g' Deploy/appsettings.json
       - name: Build, tag and push image to ecr
         env:
           REGISTRY: ${{steps.login-ecr.outputs.registry}}
@@ -54,17 +60,13 @@ jobs:
           REPOSITORY: meow/fit5120webapi
           REGISTRY: ${{steps.login-ecr.outputs.registry}}
           IMAGE_TAG: ${{github.sha}}
-          Tts__ElevenLabsApiKey: ${{ secrets.TTS__ELEVENLABSAPIKEY }}
-          Tts__DefaultVoice: ${{ secrets.TTS__DEFAULTVOICE }}
-          Tts__ModelId: ${{ secrets.TTS__MODELID }}
-          Tts__BaseUrl: ${{ secrets.TTS__BASEURL }}
         uses: appleboy/ssh-action@v1.1.0
         with:
           host: ${{ secrets.HOST }}
           port: 22
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           username: ${{ secrets.USERNAME }}
-          envs: REGISTRY, REPOSITORY, IMAGE_TAG, AWS_REGION, CONTAINER_NAME, Tts__ElevenLabsApiKey, Tts__DefaultVoice, Tts__ModelId, Tts__BaseUrl
+          envs: REGISTRY, REPOSITORY, IMAGE_TAG, AWS_REGION, CONTAINER_NAME
           script: |-
             aws ecr get-login-password --region $AWS_REGION | sudo docker login --username AWS --password-stdin $REGISTRY
             sudo docker pull $REGISTRY/$REPOSITORY:$IMAGE_TAG
@@ -77,8 +79,4 @@ jobs:
             fi
             sudo docker run -d --name $CONTAINER_NAME -p 8080:8080 \
               -e ASPNETCORE_ENVIRONMENT=Development \
-              -e Tts__ElevenLabsApiKey="$Tts__ElevenLabsApiKey" \
-              -e Tts__DefaultVoice="$Tts__DefaultVoice" \
-              -e Tts__ModelId="$Tts__ModelId" \
-              -e Tts__BaseUrl="$Tts__BaseUrl" \
               $REGISTRY/$REPOSITORY:$IMAGE_TAG

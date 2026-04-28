@@ -41,17 +41,11 @@ public class TtsService : ITtsService
 
         var voiceId = request.VoiceId?.Trim();
         if (string.IsNullOrWhiteSpace(voiceId))
-            voiceId = _configuration["Tts:DefaultVoice"]
-                      ?? _configuration["Tts__DefaultVoice"]
-                      ?? Environment.GetEnvironmentVariable("Tts__DefaultVoice")
-                      ?? DefaultVoiceId;
+            voiceId = _configuration["Tts:DefaultVoice"] ?? DefaultVoiceId;
 
         var modelId = request.ModelId?.Trim();
         if (string.IsNullOrWhiteSpace(modelId))
-            modelId = _configuration["Tts:ModelId"]
-                      ?? _configuration["Tts__ModelId"]
-                      ?? Environment.GetEnvironmentVariable("Tts__ModelId")
-                      ?? DefaultModelId;
+            modelId = _configuration["Tts:ModelId"] ?? DefaultModelId;
 
         var textHash = ComputeHash(text, voiceId, modelId);
         _logger.LogInformation(
@@ -79,16 +73,11 @@ public class TtsService : ITtsService
 
         _logger.LogInformation("TTS cache miss for TextHash={TextHash}; calling ElevenLabs", textHash);
 
-        var apiKey = _configuration["Tts:ElevenLabsApiKey"]
-                     ?? _configuration["Tts__ElevenLabsApiKey"]
-                     ?? Environment.GetEnvironmentVariable("Tts__ElevenLabsApiKey");
+        var apiKey = _configuration["Tts:ElevenLabsApiKey"];
         if (string.IsNullOrWhiteSpace(apiKey))
             throw new InvalidOperationException("Missing ElevenLabs API key in configuration.");
 
-        var baseUrl = _configuration["Tts:BaseUrl"]
-                      ?? _configuration["Tts__BaseUrl"]
-                      ?? Environment.GetEnvironmentVariable("Tts__BaseUrl")
-                      ?? DefaultBaseUrl;
+        var baseUrl = _configuration["Tts:BaseUrl"] ?? DefaultBaseUrl;
 
         var generated = await CallElevenLabsAsync(baseUrl, apiKey, text, voiceId, modelId);
         var timingsJson = JsonSerializer.Serialize(generated.Timings, _jsonOptions);
