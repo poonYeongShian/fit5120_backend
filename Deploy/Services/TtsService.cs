@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Globalization;
 using Deploy.DTOs;
 using Deploy.Interfaces;
 using Deploy.Models;
@@ -47,12 +48,17 @@ public class TtsService : ITtsService
         if (string.IsNullOrWhiteSpace(modelId))
             modelId = _configuration["Tts:ModelId"] ?? DefaultModelId;
 
-        var textHash = ComputeHash(text, voiceId, modelId);
+        var speed = request.Speed ?? 1.0m;
+        if (speed <= 0m)
+            throw new ArgumentException("Speed must be greater than 0.");
+
+        var textHash = ComputeHash(text, voiceId, modelId, speed);
         _logger.LogInformation(
-            "TTS generate requested. TextLength={TextLength}, VoiceId={VoiceId}, ModelId={ModelId}, TextHash={TextHash}",
+            "TTS generate requested. TextLength={TextLength}, VoiceId={VoiceId}, ModelId={ModelId}, Speed={Speed}, TextHash={TextHash}",
             text.Length,
             voiceId,
             modelId,
+            speed,
             textHash);
 
         var cached = await _repository.GetByKeyAsync(textHash, voiceId, modelId);
@@ -64,6 +70,7 @@ public class TtsService : ITtsService
                 TextHash = textHash,
                 VoiceId = voiceId,
                 ModelId = modelId,
+                Speed = cached.Speed,
                 MimeType = cached.MimeType,
                 Cached = true,
                 AudioUrl = $"{audioUrlBase.TrimEnd('/')}/{textHash}",
@@ -79,7 +86,7 @@ public class TtsService : ITtsService
 
         var baseUrl = _configuration["Tts:BaseUrl"] ?? DefaultBaseUrl;
 
-        var generated = await CallElevenLabsAsync(baseUrl, apiKey, text, voiceId, modelId);
+        var generated = await CallElevenLabsAsync(baseUrl, apiKey, text, voiceId, modelId, speed);
         var timingsJson = JsonSerializer.Serialize(generated.Timings, _jsonOptions);
         _logger.LogInformation(
             "ElevenLabs returned audio for TextHash={TextHash}. AudioBytes={AudioBytes}, Timings={TimingCount}",
@@ -93,6 +100,7 @@ public class TtsService : ITtsService
             Text = text,
             VoiceId = voiceId,
             ModelId = modelId,
+            Speed = speed,
             MimeType = DefaultMimeType,
             AudioContent = generated.AudioBytes,
             TimingsJson = timingsJson
@@ -106,6 +114,7 @@ public class TtsService : ITtsService
             TextHash = textHash,
             VoiceId = voiceId,
             ModelId = modelId,
+            Speed = speed,
             MimeType = DefaultMimeType,
             Cached = false,
             AudioUrl = $"{audioUrlBase.TrimEnd('/')}/{textHash}",
@@ -126,7 +135,7 @@ public class TtsService : ITtsService
         return (entry.AudioContent, entry.MimeType);
     }
 
-    private async Task<TtsGeneratedAudio> CallElevenLabsAsync(string baseUrl, string apiKey, string text, string voiceId, string modelId)
+    private async Task<TtsGeneratedAudio> CallElevenLabsAsync(string baseUrl, string apiKey, string text, string voiceId, string modelId, decimal speed)
     {
         var client = _httpClientFactory.CreateClient();
         var url = $"{baseUrl.TrimEnd('/')}/v1/text-to-speech/{voiceId}/with-timestamps";
@@ -137,7 +146,11 @@ public class TtsService : ITtsService
         var body = JsonSerializer.Serialize(new
         {
             text,
-            model_id = modelId
+            model_id = modelId,
+            voice_settings = new
+            {
+                speed
+            }
         });
         request.Content = new StringContent(body, Encoding.UTF8, "application/json");
 
@@ -171,9 +184,10 @@ public class TtsService : ITtsService
         };
     }
 
-    private static string ComputeHash(string text, string voiceId, string modelId)
+    private static string ComputeHash(string text, string voiceId, string modelId, decimal speed)
     {
-        var raw = $"{text}|{voiceId}|{modelId}";
+        var normalizedSpeed = speed.ToString("0.##", CultureInfo.InvariantCulture);
+        var raw = $"{text}|{voiceId}|{modelId}|{normalizedSpeed}";
         var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(raw));
         return Convert.ToHexString(hashBytes).ToLowerInvariant();
     }

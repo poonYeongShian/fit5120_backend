@@ -7,6 +7,7 @@ public class TtsCacheEntry
     public string Text { get; set; } = string.Empty;
     public string VoiceId { get; set; } = string.Empty;
     public string ModelId { get; set; } = string.Empty;
+    public decimal Speed { get; set; } = 1.0m;
     public string MimeType { get; set; } = "audio/mpeg";
     public byte[] AudioContent { get; set; } = Array.Empty<byte>();
     public string TimingsJson { get; set; } = "[]";

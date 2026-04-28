@@ -11,7 +11,8 @@ Content-Type: application/json
 {
   "text": "Hello from the TTS cache API.",
   "voiceId": "RaFzMbMIfqBcIurH6XF9",
-  "modelId": "eleven_multilingual_v2"
+  "modelId": "eleven_multilingual_v2",
+  "speed": 0.7
 }
 
 ###

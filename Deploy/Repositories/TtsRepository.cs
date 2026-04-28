@@ -28,6 +28,7 @@ public class TtsRepository : ITtsRepository
                    text         AS Text,
                    voice_id     AS VoiceId,
                    model_id     AS ModelId,
+                   speed        AS Speed,
                    mime_type    AS MimeType,
                    audio_content AS AudioContent,
                    timings_json::text AS TimingsJson
@@ -68,6 +69,7 @@ public class TtsRepository : ITtsRepository
                    text         AS Text,
                    voice_id     AS VoiceId,
                    model_id     AS ModelId,
+                   speed        AS Speed,
                    mime_type    AS MimeType,
                    audio_content AS AudioContent,
                    timings_json::text AS TimingsJson
@@ -101,6 +103,7 @@ public class TtsRepository : ITtsRepository
                 text,
                 voice_id,
                 model_id,
+                speed,
                 mime_type,
                 audio_content,
                 timings_json,
@@ -112,6 +115,7 @@ public class TtsRepository : ITtsRepository
                 @Text,
                 @VoiceId,
                 @ModelId,
+                @Speed,
                 @MimeType,
                 @AudioContent,
                 CAST(@TimingsJson AS jsonb),
@@ -153,6 +157,7 @@ public class TtsRepository : ITtsRepository
                 text          TEXT NOT NULL,
                 voice_id      TEXT NOT NULL,
                 model_id      TEXT NOT NULL,
+                speed         NUMERIC(5,2) NOT NULL DEFAULT 1.0,
                 mime_type     TEXT NOT NULL DEFAULT 'audio/mpeg',
                 audio_content BYTEA NOT NULL,
                 timings_json  JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -160,6 +165,9 @@ public class TtsRepository : ITtsRepository
                 updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 UNIQUE (text_hash, voice_id, model_id)
             );
+
+            ALTER TABLE public.tts_audio_cache
+            ADD COLUMN IF NOT EXISTS speed NUMERIC(5,2) NOT NULL DEFAULT 1.0;
 
             ALTER TABLE public.tts_audio_cache
             ADD COLUMN IF NOT EXISTS timings_json JSONB NOT NULL DEFAULT '[]'::jsonb;
