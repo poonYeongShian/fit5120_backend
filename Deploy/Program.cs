@@ -5,8 +5,23 @@ using Deploy.Interfaces;
 using Deploy.Repositories;
 using Deploy.Services;
 using Deploy.Endpoints;
+using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Load .env from repo root (or current dir) for local secrets.
+var envCandidates = new[]
+{
+    Path.Combine(builder.Environment.ContentRootPath, "..", ".env"),
+    Path.Combine(builder.Environment.ContentRootPath, ".env")
+};
+foreach (var envPath in envCandidates)
+{
+    if (File.Exists(envPath))
+    {
+        Env.Load(envPath);
+    }
+}
 
 // Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
@@ -52,6 +67,9 @@ builder.Services.AddScoped<IMissionRepository, MissionRepository>();
 builder.Services.AddScoped<IMissionService, MissionService>();
 builder.Services.AddScoped<IBadgeRepository, BadgeRepository>();
 builder.Services.AddScoped<IBadgeService, BadgeService>();
+builder.Services.AddScoped<ITtsRepository, TtsRepository>();
+builder.Services.AddScoped<ITtsService, TtsService>();
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
@@ -80,6 +98,7 @@ app.MapProfileEndpoints(apiVersionSet);
 app.MapFunFactEndpoints(apiVersionSet);
 app.MapMissionEndpoints(apiVersionSet);
 app.MapBadgeEndpoints(apiVersionSet);
+app.MapTtsEndpoints(apiVersionSet);
 
 await app.RunAsync();
 
